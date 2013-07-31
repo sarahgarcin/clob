@@ -3,7 +3,7 @@ READ ME
 #Libraries
 
 	- Open CV
-	http://ubaa.net/shared/processing/opencv/
+	[opencv](http://ubaa.net/shared/processing/opencv)
 
 	- Open Kinect
 	http://www.labx.fr/?p=322
