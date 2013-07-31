@@ -1,6 +1,7 @@
 import SimpleOpenNI.*;
 
 SimpleOpenNI context;
+boolean       autoCalib=true;
 
 void setup()
 {
@@ -13,7 +14,7 @@ void setup()
   // enable skeleton generation for all joints
   context.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
  
-  background(200,0,0);
+  background(255,0,0);
   stroke(255,0,0);
   strokeWeight(3);
   smooth(); 
@@ -82,10 +83,16 @@ void drawSkeleton(int userId)
 void onNewUser(int userId)
 {
   println("New User Detected - userId: " + userId);
- 
- // start pose detection
-  context.startPoseDetection("Psi", userId);
+
+    if(autoCalib)
+    context.requestCalibrationSkeleton(userId,true);
+  else    
+    context.startPoseDetection("Psi",userId);
 }
+ 
+//  // start pose detection
+//   context.startPoseDetection("Psi", userId);
+// }
  
 // when a person ('user') leaves the field of view 
 void onLostUser(int userId)
@@ -93,17 +100,17 @@ void onLostUser(int userId)
   println("User Lost - userId: " + userId);
 }
 
-// when a user begins a pose
-void onStartPose(String pose,int userId)
-{
-  println("Start of Pose Detected  - userId: " + userId + ", pose: " + pose);
+// // when a user begins a pose
+// void onStartPose(String pose,int userId)
+// {
+//   println("Start of Pose Detected  - userId: " + userId + ", pose: " + pose);
  
-  // stop pose detection
-  context.stopPoseDetection(userId); 
+//   // stop pose detection
+//   context.stopPoseDetection(userId); 
  
-  // start attempting to calibrate the skeleton
-  context.requestCalibrationSkeleton(userId, true); 
-}
+//   // start attempting to calibrate the skeleton
+//   context.requestCalibrationSkeleton(userId, true); 
+// }
  
  
  // when calibration begins
@@ -131,5 +138,22 @@ void onEndCalibration(int userId, boolean successfull)
     // Start pose detection
     context.startPoseDetection("Psi", userId);
   }
+}
+
+// when a user begins a pose
+void onStartPose(String pose,int userId)
+{
+  println("onStartPose - userId: " + userId + ", pose: " + pose);
+  println(" stop pose detection");
+// stop pose detection
+  context.stopPoseDetection(userId);
+  // start attempting to calibrate the skeleton 
+  context.requestCalibrationSkeleton(userId, true);
+ 
+}
+
+void onEndPose(String pose,int userId)
+{
+  println("onEndPose - userId: " + userId + ", pose: " + pose);
 }
 
