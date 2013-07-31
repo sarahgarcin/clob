@@ -14,9 +14,9 @@ void setup()
   // enable skeleton generation for all joints
   context.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
  
-  background(255,0,0);
-  stroke(255,0,0);
-  strokeWeight(3);
+  background(0);
+  stroke(0,0,0);
+  strokeWeight(6);
   smooth(); 
   
   // Crée une fenêtre de la même taille que le champ 3D
@@ -31,6 +31,7 @@ void draw()
  
   // draw scene Image
   image(context.depthImage(), 0, 0);
+  background (255);
   
   // for all users from 1 to 10
   int i;
