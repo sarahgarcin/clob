@@ -1,3 +1,22 @@
+import processing.core.*; 
+import processing.data.*; 
+import processing.event.*; 
+import processing.opengl.*; 
+
+import hypermedia.video.*; 
+import SimpleOpenNI.*; 
+
+import java.util.HashMap; 
+import java.util.ArrayList; 
+import java.io.File; 
+import java.io.BufferedReader; 
+import java.io.PrintWriter; 
+import java.io.InputStream; 
+import java.io.OutputStream; 
+import java.io.IOException; 
+
+public class color_tracking extends PApplet {
+
 
   // Learning Processing
 // Daniel Shiffman
@@ -15,19 +34,19 @@
 //
 //// A variable for the color we are searching for.
 //color trackColor; 
-import hypermedia.video.*;
-import SimpleOpenNI.*;
+
+
 
 OpenCV opencv;
 SimpleOpenNI kinect;
 // Frame
 PImage currentFrame;
-color trackColor;
+int trackColor;
 
 // A Snake variable
 Snake snake;
 
-void setup() {
+public void setup() {
   size(640, 480);
   
  kinect = new SimpleOpenNI(this);
@@ -53,7 +72,7 @@ void setup() {
   
 }
 
-void draw() {
+public void draw() {
   
    kinect.update();
  
@@ -98,7 +117,7 @@ void draw() {
    for (int y = 0; y < currentFrame.height; y ++ ) {
      int loc = x + y*currentFrame.width;
      // What is current color
-     color currentColor = currentFrame.pixels[loc];
+     int currentColor = currentFrame.pixels[loc];
      float r1 = red(currentColor);
      float g1 = green(currentColor);
      float b1 = blue(currentColor);
@@ -142,7 +161,7 @@ void draw() {
   
 }
 
-void mousePressed() {
+public void mousePressed() {
   // Save color where the mouse is clicked in trackColor variable
     saveFrame("blah.tif");
   int loc = mouseX + mouseY*(currentFrame.width);
@@ -152,3 +171,56 @@ void mousePressed() {
 }
 
 
+// Learning Processing
+// Daniel Shiffman
+// http://www.learningprocessing.com
+
+// Exercise 16-5: Snake Class
+
+class Snake {
+  // x and y positions
+  int[] xpos;
+  int[] ypos;
+
+  // The constructor determines the length of the snake
+  Snake(int n) {
+    xpos = new int[n];
+    ypos = new int[n];
+  }
+
+  public void update(int newX, int newY) {
+    // Shift all elements down one spot. 
+    // xpos[0] = xpos[1], xpos[1] = xpos = [2], and so on. Stop at the second to last element.
+    for (int i = 0; i < xpos.length-1; i ++ ) {
+      xpos[i] = xpos[i+1]; 
+      ypos[i] = ypos[i+1];
+    }
+
+    // Update the last spot in the array with the mouse location.
+    xpos[xpos.length-1] = newX; 
+    ypos[ypos.length-1] = newY;
+  }
+
+  public void display() {
+    // Draw everything
+    for (int i = 0; i < xpos.length; i ++ ) {
+      // Draw an ellipse for each element in the arrays. 
+      // Color and size are tied to the loop's counter: i.
+      stroke(0);
+      fill(255-i*5);
+      ellipse(xpos[i],ypos[i],i,i); 
+    }
+
+  }
+
+}
+
+  static public void main(String[] passedArgs) {
+    String[] appletArgs = new String[] { "color_tracking" };
+    if (passedArgs != null) {
+      PApplet.main(concat(appletArgs, passedArgs));
+    } else {
+      PApplet.main(appletArgs);
+    }
+  }
+}

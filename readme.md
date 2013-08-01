@@ -32,3 +32,6 @@ http://ubaa.net/shared/processing/opencv/opencv_blobs.html
 file://localhost/Users/sarahgarcin/Documents/Processing/libraries/OpenCV/reference/blob.html
 --> http://ubaa.net/shared/processing/opencv/javadoc/
 --> http://thefactoryfactory.com/wordpress/?p=1012
+
+Blob and Color Tracking
+http://www.mon-club-elec.fr/pmwiki_mon_club_elec/pmwiki.php?n=MAIN.OutilsProcessingOpenCVSuiviBalle
