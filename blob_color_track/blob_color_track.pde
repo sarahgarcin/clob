@@ -8,7 +8,7 @@ import SimpleOpenNI.*;// importe la librairie SimpleOpenNi pour utiliser le prog
 // déclaration objets 
 PImage currentFrame; // déclare un/des objets PImage (conteneur d'image)
 OpenCV opencv; // déclare un objet OpenCV principal
-SimpleOpenNI context; // déclare un objet SimpleOpenNI 
+SimpleOpenNI kinect; // déclare un objet SimpleOpenNI 
 
 
 //------ déclaration des variables de couleur utiles ---- 
@@ -38,8 +38,8 @@ void setup(){ // fonction d'initialisation exécutée 1 fois au démarrage
   background(0,0,0); // couleur fond fenetre
 
   //======= Initialisation de la kinect ==========
-  context = new SimpleOpenNI(this);
-  context.enableRGB();
+  kinect = new SimpleOpenNI(this);
+  kinect.enableRGB();
 
   //======== Initialisation Objets OpenCV (vidéo et reconnaissance visuelle =========
 
@@ -53,8 +53,8 @@ void setup(){ // fonction d'initialisation exécutée 1 fois au démarrage
 
 void  draw() { // fonction exécutée en boucle
 
-  context.update();
-  currentFrame = context.rgbImage();
+  kinect.update();
+  currentFrame = kinect.rgbImage();
         
   opencv.copy(currentFrame, 0, 0, 640, 480, 0, 0, 640,480); // copie l'image de la kinect dans opencv
 
