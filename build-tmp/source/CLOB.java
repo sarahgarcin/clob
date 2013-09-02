@@ -49,7 +49,7 @@ public void setup()
   context3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
  
   background(0);
-  strokeWeight(3);
+  strokeWeight(1);
   smooth(); 
   
   // Cr\u00e9e une fen\u00eatre de la m\u00eame taille que le champ 3D
@@ -60,12 +60,12 @@ public void setup()
 
    // ---- initialisation param\u00e8tres graphiques utilis\u00e9s
   colorMode(RGB, 255,255,255); // fixe format couleur R G B pour fill, stroke, etc...
-  fill(0,0,255); // couleur remplissage RGB
-  stroke (255,0,0); // couleur pourtour RGB
+  //fill(0,0,255); // couleur remplissage RGB
+  stroke (0,0,0); // couleur pourtour RGB
   rectMode(CORNER); // origine rectangle : CORNER = coin sup gauche | CENTER : centre 
   imageMode(CORNER); // origine image : CORNER = coin sup gauche | CENTER : centre
   // strokeWeight(3); // largeur pourtour
-  frameRate(30);// Images par seconde
+  frameRate(24);// Images par seconde
 
   // --- initialisation fen\u00eatre de base --- 
   size(640, 480); // ouvre une fen\u00eatre xpixels  x ypixels
@@ -102,7 +102,7 @@ public void draw()
 
   contextRGB.update();
   imgRGB = contextRGB.rgbImage();
-  // image(imgRGB, 0, 0);   // affichage image video
+ //image(imgRGB, 0, 0);   // affichage image video
 
   //----- 1\u00b0) application du "mixeur de canaux" avec sortie sur canal Rouge
   //---- coeff \u00e0 appliquer 
@@ -157,7 +157,7 @@ public void draw()
 
   // trouve les formes \u00e0 l'aide de la librairie openCV
   // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobs = opencv.blobs( 10, width*height/4, 5, false, OpenCV.MAX_VERTICES*4 );
+  Blob[] blobs = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
 
   //recharge l'image vid\u00e9o
   noTint();
@@ -167,13 +167,42 @@ public void draw()
   for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
 
     // trac\u00e9 des formes d\u00e9tect\u00e9es
-    beginShape(); // d\u00e9but trac\u00e9 forme complexe
+    // beginShape(); // d\u00e9but trac\u00e9 forme complexe
     
+    // for( int j=0; j<blobs[i].points.length; j++ ) {
+    //   vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // trac\u00e9 des points de la forme
+    // }
+
+    int maxX=0;
+    int maxY=0;
+
+    int minX=0;
+    int minY=0;
+
     for( int j=0; j<blobs[i].points.length; j++ ) {
-      vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // trac\u00e9 des points de la forme
+      // Object p = blobs[i].points[j];
+      // println("p: "+p);
+      if (j==0){
+        maxX=blobs[i].points[j].x;
+        maxY=blobs[i].points[j].y;
+        minX=blobs[i].points[j].x;
+        minY=blobs[i].points[j].y;
+      }
+      else if (maxX<blobs[i].points[j].x){
+        maxX=blobs[i].points[j].x;
+        maxY=blobs[i].points[j].y;
+      }
+      else if (minX>blobs[i].points[j].x){
+        minX=blobs[i].points[j].x;
+        minY=blobs[i].points[j].y;
+      }
     }
+
+    line(maxX, maxY, minX, minY);
     
-    endShape(CLOSE); // trac\u00e9 forme complexe
+
+    // endShape(CLOSE); // trac\u00e9 forme complexe
+
   }
 
 

@@ -30,7 +30,7 @@ void setup()
   context3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
  
   background(0);
-  strokeWeight(3);
+  strokeWeight(1);
   smooth(); 
   
   // Crée une fenêtre de la même taille que le champ 3D
@@ -41,8 +41,8 @@ void setup()
 
    // ---- initialisation paramètres graphiques utilisés
   colorMode(RGB, 255,255,255); // fixe format couleur R G B pour fill, stroke, etc...
-  fill(0,0,255); // couleur remplissage RGB
-  stroke (255,0,0); // couleur pourtour RGB
+  //fill(0,0,255); // couleur remplissage RGB
+  stroke (0,0,0); // couleur pourtour RGB
   rectMode(CORNER); // origine rectangle : CORNER = coin sup gauche | CENTER : centre 
   imageMode(CORNER); // origine image : CORNER = coin sup gauche | CENTER : centre
   // strokeWeight(3); // largeur pourtour
@@ -83,7 +83,7 @@ void draw()
 
   contextRGB.update();
   imgRGB = contextRGB.rgbImage();
-  // image(imgRGB, 0, 0);   // affichage image video
+ //image(imgRGB, 0, 0);   // affichage image video
 
   //----- 1°) application du "mixeur de canaux" avec sortie sur canal Rouge
   //---- coeff à appliquer 
@@ -138,7 +138,7 @@ void draw()
 
   // trouve les formes à l'aide de la librairie openCV
   // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobs = opencv.blobs( 10, width*height/4, 5, false, OpenCV.MAX_VERTICES*4 );
+  Blob[] blobs = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
 
   //recharge l'image vidéo
   noTint();
@@ -148,13 +148,42 @@ void draw()
   for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
 
     // tracé des formes détectées
-    beginShape(); // début tracé forme complexe
+    // beginShape(); // début tracé forme complexe
     
+    // for( int j=0; j<blobs[i].points.length; j++ ) {
+    //   vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // tracé des points de la forme
+    // }
+
+    int maxX=0;
+    int maxY=0;
+
+    int minX=0;
+    int minY=0;
+
     for( int j=0; j<blobs[i].points.length; j++ ) {
-      vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // tracé des points de la forme
+      // Object p = blobs[i].points[j];
+      // println("p: "+p);
+      if (j==0){
+        maxX=blobs[i].points[j].x;
+        maxY=blobs[i].points[j].y;
+        minX=blobs[i].points[j].x;
+        minY=blobs[i].points[j].y;
+      }
+      else if (maxX<blobs[i].points[j].x){
+        maxX=blobs[i].points[j].x;
+        maxY=blobs[i].points[j].y;
+      }
+      else if (minX>blobs[i].points[j].x){
+        minX=blobs[i].points[j].x;
+        minY=blobs[i].points[j].y;
+      }
     }
+
+    line(maxX, maxY, minX, minY);
     
-    endShape(CLOSE); // tracé forme complexe
+
+    // endShape(CLOSE); // tracé forme complexe
+
   }
 
 
