@@ -87,14 +87,15 @@ void draw()
 
   //----- 1°) application du "mixeur de canaux" avec sortie sur canal Rouge
   //---- coeff à appliquer 
-  float coefRouge=2.5; 
-  float coefVert=-2; 
-  float coefBleu=-0; 
+  // float coefRouge=2.5, coefVert=-2, coefBleu=-0; // orange
+
+  // float coefRouge=1, coefVert=2, coefBleu=-2; // jaune
+ float coefRouge=3, coefVert=0, coefBleu=-2; // bleu
 
   imgRGB.loadPixels(); // charge les pixels de la fenetre d'affichage
          
   for (int i = 0; i < width*height; i++) { // passe en revue les pixels de l'image - index 0 en premier
-
+  //------ JAUNE ET ORANGE -----//
     float r = (red(imgRGB.pixels[i])*coefRouge) + (green(imgRGB.pixels[i])*coefVert) + (blue(imgRGB.pixels[i])*coefBleu); // la couleur rouge
     //---- fonction mixeur de canaux
     //---- le canal rouge est le canal de sortie et a pour coeff 1
@@ -104,12 +105,24 @@ void draw()
     // les deux autres canaux restent inchangés
     float g = green(imgRGB.pixels[i]); // la couleur verte
     float b = blue(imgRGB.pixels[i]); // la couleur bleue
+
+  // //------ BLEU-----//
+  //   float b = (red(imgRGB.pixels[i])*coefRouge) + (green(imgRGB.pixels[i])*coefVert) + (blue(imgRGB.pixels[i])*coefBleu); // la couleur bleue
+  //   //---- fonction mixeur de canaux
+  //   //---- le canal rouge est le canal de sortie et a pour coeff 1
+  //   //---- auquel on ajoute du vert avec coeff vert
+  //   //---- et du bleu avec coeff bleu
+
+  //   // les deux autres canaux restent inchangés
+  //   float g = green(imgRGB.pixels[i]); // la couleur verte
+  //   float r = red(imgRGB.pixels[i]); // la couleur rouge
     
     imgRGB.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
 
   }
          
-  imgRGB.updatePixels();  // met à jour les pixels  
+  imgRGB.updatePixels();  // met à jour les pixels 
+  image(imgRGB, 0, 0); 
 
   //----- 2°) transformation de l'image en monochrome en se basant sur le canal rouge
 
@@ -125,7 +138,8 @@ void draw()
 
   }
 
-  imgRGB.updatePixels();  // met à jour les pixels  
+  imgRGB.updatePixels();  // met à jour les pixels
+
 
   //------ on applique filtre de seuillage --- 
   imgRGB.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
