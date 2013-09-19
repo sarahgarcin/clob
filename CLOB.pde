@@ -2,6 +2,8 @@ import SimpleOpenNI.*;
 import hypermedia.video.*; // importe la librairie vidéo et reconnaissance visuelle OpenCV
 // Java's Color class. Used to convert between RGB and HSB colorspaces
 import java.awt.Color;
+import java.awt.Point;
+import java.util.Map;
 
 SimpleOpenNI kinect3D;
 boolean      autoCalib=true;
@@ -30,26 +32,13 @@ float tolerance = 0.1f;
 
 char       myFirstKey;
 
-// OpenCV opencv; // déclare un objet OpenCV principal
+OpenCV opencv; // déclare un objet OpenCV principal
 SimpleOpenNI kinectRGB; // déclare un objet SimpleOpenNI 
 
 //------ déclaration des variables de couleur utiles ---- 
-// int         jaune=color(255,255,0),
-//             vert=color(0,255,0),
-//             rouge=color(255,0,0),
-//             bleu=color(0,0,255),
-//             noir=color(0,0,0),
-//             blanc=color(255,255,255),
-//             bleuclair=color(0,255,255),
-//             violet=color(255,0,255); 
-
-// color[]       userClr = new color[]{ color(255,0,0),
-//                                      color(0,255,0),
-//                                      color(0,0,255),
-//                                      color(255,255,0),
-//                                      color(255,0,255),
-//                                      color(0,255,255)
-//                                    };
+int         orange=color(255,0,0),
+            jaune=color(255,255,0),
+            bleu=color(0,0,255);
 
 PVector      com = new PVector();                                   
 
@@ -131,8 +120,8 @@ void setup()
 
 
   // --- initialise objet OpenCV à partir du parent This
-  // opencv = new OpenCV(this);
-  // opencv.allocate(640,480);
+  opencv = new OpenCV(this);
+  opencv.allocate(640,480);
 
   imgRGB = createImage (640,480, RGB);
   imgRGBOrange = createImage (640,480, RGB);
@@ -308,10 +297,10 @@ void drawCleats(){
     // Starting with the hue, because it is the most distinctive component for our purpose
     if (h > colorH_J-tolerance && h < colorH_J+tolerance) {
       // The other components are still important for better precision
-      // if(s >= colorS_J && br >= colorB_J) {
+      if(s >= colorS_J && br >= colorB_J) {
         // If the color is within range, the pixel will be white
         imgRGBJaune.pixels[i] = 0xFFFFFFFF;
-      // }
+      }
     }
   }
   imgRGBJaune.updatePixels();  // met à jour les pixels 
@@ -347,10 +336,10 @@ void drawCleats(){
     // Starting with the hue, because it is the most distinctive component for our purpose
     if (h > colorH_B-tolerance && h < colorH_B+tolerance) {
       // The other components are still important for better precision
-      // if(s >= colorS_B && br >= colorB_B) {
+      if(s >= colorS_B && br >= colorB_B) {
         // If the color is within range, the pixel will be white
         imgRGBBleu.pixels[i] = 0xFFFFFFFF;
-      // }
+      }
     }
   }
   imgRGBBleu.updatePixels();  // met à jour les pixels 
@@ -358,56 +347,90 @@ void drawCleats(){
   if(myFirstKey == 'b')
     debugImageTreatment(imgRGBBleu, width/2, height/2);
 
-//   //--- on rebascule dans OpenCV --- 
-//   opencv.copy(imgRGB); // charge l'image modifiée dans le buffer opencv
 
-//   // trouve les formes à l'aide de la librairie openCV
-//   // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-//   Blob[] blobs = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
 
-//   //recharge l'image vidéo
-//   noTint();
-//   //image(opencv.image(), 0, 0 );   // affichage image video
 
-//   // draw blob results
-//   for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
+  //--- on rebascule dans OpenCV pour les blobs --- 
+  opencv.copy(imgRGBOrange); // charge l'image modifiée dans le buffer opencv
+  noTint();
+  strokeWeight(3);
 
-//     // tracé des formes détectées
-//     // beginShape(); // début tracé forme complexe
-    
-//     // for( int j=0; j<blobs[i].points.length; j++ ) {
-//     //   vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // tracé des points de la forme
-//     // }
+  // trouve les formes à l'aide de la librairie openCV
+  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
+  Blob[] blobsOrange = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
 
-//     int maxX=0;
-//     int maxY=0;
+  // draw blob results
+  for( int i=0; i<blobsOrange.length; i++ ) { // passe en revue les blobs
+    // tracé des formes détectées
+    Point[] ext = getMaxAndMinPoints(blobsOrange[i].points);
+    stroke(255, 0, 0);
+    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
+  }
 
-//     int minX=0;
-//     int minY=0;
 
-//     for( int j=0; j<blobs[i].points.length; j++ ) {
-//       // Object p = blobs[i].points[j];
-//       // println("p: "+p);
-//       if (j==0){
-//         maxX=blobs[i].points[j].x;
-//         maxY=blobs[i].points[j].y;
-//         minX=blobs[i].points[j].x;
-//         minY=blobs[i].points[j].y;
-//       }
-//       else if (maxX<blobs[i].points[j].x){
-//         maxX=blobs[i].points[j].x;
-//         maxY=blobs[i].points[j].y;
-//       }
-//       else if (minX>blobs[i].points[j].x){
-//         minX=blobs[i].points[j].x;
-//         minY=blobs[i].points[j].y;
-//       }
-//     }
+  opencv.copy(imgRGBBleu); // charge l'image modifiée dans le buffer opencv
+  noTint();
 
-//     line(maxX, maxY, minX, minY);
-    
-//   }
-//     // endShape(CLOSE); // tracé forme complexe
+  // trouve les formes à l'aide de la librairie openCV
+  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
+  Blob[] blobsBleu = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
+
+  // draw blob results
+  for( int i=0; i<blobsBleu.length; i++ ) { // passe en revue les blobs
+    // tracé des formes détectées
+    Point[] ext = getMaxAndMinPoints(blobsBleu[i].points);
+    stroke(0, 0, 255);
+    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
+  }
+
+  opencv.copy(imgRGBJaune); // charge l'image modifiée dans le buffer opencv
+  noTint();
+
+  // trouve les formes à l'aide de la librairie openCV
+  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
+  Blob[] blobsJaune = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
+
+  // draw blob results
+  for( int i=0; i<blobsJaune.length; i++ ) { // passe en revue les blobs
+    // tracé des formes détectées
+    Point[] ext = getMaxAndMinPoints(blobsJaune[i].points);
+    stroke(255,255,0);
+    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
+  }
+
+}
+
+Point[] getMaxAndMinPoints(Point[] points){
+  
+  int maxX=0;
+  int maxY=0;
+
+  int minX=0;
+  int minY=0;
+
+  Point[] ext = new Point[2];
+
+
+  for( int j=0; j<points.length; j++ ) {
+    if (j==0){
+      maxX=points[j].x;
+      maxY=points[j].y;
+      minX=points[j].x;
+      minY=points[j].y;
+    }
+    else if (maxX<points[j].x){
+      maxX=points[j].x;
+      maxY=points[j].y;
+    }
+    else if (minX>points[j].x){
+      minX=points[j].x;
+      minY=points[j].y;
+    }
+  }
+  ext[0] = new Point(minX, minY);
+  ext[1] = new Point(maxX, maxY);
+
+  return ext;
 }
 
 void keyPressed() {
@@ -417,74 +440,6 @@ void keyPressed() {
     myFirstKey = key;
   }
   if(key == 'r' || key == 'f' || key == 't' || key == 'g'){
-    // switch(myFirstKey){
-    //   case 'o':
-    //     switch(key){
-    //       case 'q':
-    //         coefRouge_O += increment;
-    //         break;
-    //       case 'w':
-    //         coefRouge_O -= increment;
-    //         break;
-    //       case 's':
-    //         coefVert_O += increment;
-    //         break;
-    //       case 'x':
-    //         coefVert_O -= increment;
-    //         break;
-    //       case 'd':
-    //         coefBleu_O += increment;
-    //         break;
-    //       case 'c':
-    //         coefBleu_O -= increment;
-    //         break;
-    //     }
-    //   break;
-    //   case 'j':
-    //     switch(key){
-    //       case 'q':
-    //         coefRouge_J += increment;
-    //         break;
-    //       case 'w':
-    //         coefRouge_J -= increment;
-    //         break;
-    //       case 's':
-    //         coefVert_J += increment;
-    //         break;
-    //       case 'x':
-    //         coefVert_J -= increment;
-    //         break;
-    //       case 'd':
-    //         coefBleu_J += increment;
-    //         break;
-    //       case 'c':
-    //         coefBleu_J -= increment;
-    //         break;
-    //     }
-    //     break;
-    //   case 'b':
-    //     switch(key){
-    //       case 'q':
-    //         coefRouge_B += increment;
-    //         break;
-    //       case 'w':
-    //         coefRouge_B -= increment;
-    //         break;
-    //       case 's':
-    //         coefVert_B += increment;
-    //         break;
-    //       case 'x':
-    //         coefVert_B -= increment;
-    //         break;
-    //       case 'd':
-    //         coefBleu_B += increment;
-    //         break;
-    //       case 'c':
-    //         coefBleu_B -= increment;
-    //         break;
-    //     }
-    //     break;
-    // }
     switch(key) {
       case 'r':
         tolerance += 0.01;
