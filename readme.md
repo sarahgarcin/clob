@@ -12,6 +12,9 @@ Simple OpenNI
 http://learning.codasign.com/index.php?title=Installing_OpenNi_for_Processing
 https://code.google.com/p/simple-openni/wiki/Installation
 
+https://simple-openni.googlecode.com/svn/trunk/SimpleOpenNI-2.0/dist/all/SimpleOpenNI.zip
+
+
 
 # Tuto
 

@@ -1,276 +1,398 @@
 import SimpleOpenNI.*;
 import hypermedia.video.*; // importe la librairie vidéo et reconnaissance visuelle OpenCV
 
-SimpleOpenNI context3D;
-boolean autoCalib=true;
+SimpleOpenNI kinect3D;
+boolean      autoCalib=true;
 
-PImage imgRGB; // déclare un/des objets PImage (conteneur d'image)
-OpenCV opencv; // déclare un objet OpenCV principal
-SimpleOpenNI contextRGB; // déclare un objet SimpleOpenNI 
+PImage       imgRGB; // déclare un/des objets PImage (conteneur d'image)
+PImage       imgOrange;
+float        coefRouge_O, coefVert_O, coefBleu_O;
+
+PImage       imgBleu;
+float        coefRouge_B, coefVert_B, coefBleu_B;
+
+PImage       imgJaune;
+float        coefRouge_J, coefVert_J, coefBleu_J;
+
+char       myFirstKey;
+
+//OpenCV opencv; // déclare un objet OpenCV principal
+SimpleOpenNI kinectRGB; // déclare un objet SimpleOpenNI 
 
 //------ déclaration des variables de couleur utiles ---- 
-int jaune=color(255,255,0); 
-int vert=color(0,255,0); 
-int rouge=color(255,0,0); 
-int bleu=color(0,0,255); 
-int noir=color(0,0,0); 
-int blanc=color(255,255,255); 
-int bleuclair=color(0,255,255); 
-int violet=color(255,0,255); 
+// int         jaune=color(255,255,0),
+//             vert=color(0,255,0),
+//             rouge=color(255,0,0),
+//             bleu=color(0,0,255),
+//             noir=color(0,0,0),
+//             blanc=color(255,255,255),
+//             bleuclair=color(0,255,255),
+//             violet=color(255,0,255); 
+
+// color[]       userClr = new color[]{ color(255,0,0),
+//                                      color(0,255,0),
+//                                      color(0,0,255),
+//                                      color(255,255,0),
+//                                      color(255,0,255),
+//                                      color(0,255,255)
+//                                    };
+
+PVector      com = new PVector();                                   
 
 void setup()
 {
-  // Initialise un nouveau contexte qui communique avec la kinect
-  context3D = new SimpleOpenNI(this);
+  size(640, 468);
+  // size(640, 480);
+  // --- initialisation context kinect 3D (infrarouge)---
+  kinect3D = new SimpleOpenNI(this); // Initialise un nouveau contexte qui communique avec la kinect
  
-  // Autorise de collecter des données en profondeur
-  context3D.enableDepth();
-  
+  if(kinect3D.isInit() == false){
+     println("Can't init SimpleOpenNI, maybe the camera is not connected!"); 
+     exit();
+     return;  
+  }
+
+  // kinect3D.setMirror(false); // disable mirror
+  kinect3D.enableDepth(); // Autorise de collecter des données en profondeur
+  // kinect3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL); // enable skeleton generation for all joints
+  kinect3D.enableUser();// enable skeleton generation for all joints
   // enable skeleton generation for all joints
-  context3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
- 
-  background(0);
+  // kinect3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
+
+  // --- initialisation fenêtre de base ---  
+  // size(kinect3D.depthWidth(), kinect3D.depthHeight());// Crée une fenêtre de la même taille que le champ 3D
+  // size(640, 480); // ouvre une fenêtre xpixels  x ypixels
+  
+  
+  // --- initialisation paramètres graphiques utilisés ---
+  background(255,255,255); // couleur fond fenetre
   strokeWeight(1);
   smooth(); 
-  
-  // Crée une fenêtre de la même taille que le champ 3D
-  size(context3D.depthWidth(), context3D.depthHeight());
-
-  contextRGB = new SimpleOpenNI(this);
-  contextRGB.enableRGB();
-
-   // ---- initialisation paramètres graphiques utilisés
   colorMode(RGB, 255,255,255); // fixe format couleur R G B pour fill, stroke, etc...
-  //fill(0,0,255); // couleur remplissage RGB
-  stroke (0,0,0); // couleur pourtour RGB
   rectMode(CORNER); // origine rectangle : CORNER = coin sup gauche | CENTER : centre 
   imageMode(CORNER); // origine image : CORNER = coin sup gauche | CENTER : centre
-  // strokeWeight(3); // largeur pourtour
   frameRate(24);// Images par seconde
+  //fill(0,0,255); // couleur remplissage RGB
+  stroke (0,0,0); // couleur pourtour RGB
+  // strokeWeight(3); // largeur pourtour
 
-  // --- initialisation fenêtre de base --- 
-  size(640, 480); // ouvre une fenêtre xpixels  x ypixels
-  // background(0,0,0); // couleur fond fenetre
 
-  opencv = new OpenCV(this); // initialise objet OpenCV à partir du parent This
+
+  // --- initialisation context kinect rgb (webcam) ---
+  kinectRGB = new SimpleOpenNI(this);
+  kinectRGB.enableRGB();
   
-  imgRGB = createImage (640,480, RGB);
-  opencv.allocate(640,480);
- 
+  coefRouge_O=1.1;  // 100 % de rouge
+  coefVert_O=1.5;   // 80 % de vert
+  coefBleu_O=-2;    // -200% de bleu
+
+  coefRouge_J=-1;   // 100 % de rouge
+  coefVert_J=1;     // 80 % de vert
+  coefBleu_J=-2;    // -200% de bleu
+
+  coefRouge_B=-2;   // 100 % de rouge
+  coefVert_B=1.8;   // 80 % de vert
+  coefBleu_B=2;     // -200% de bleu
+
+  // --- initialise objet OpenCV à partir du parent This
+//  opencv = new OpenCV(this);
+//  opencv.allocate(640,480);
+
+  // imgRGB = createImage (640,480, RGB);
+
+
+
 }
 
 void draw()
 {
-  // update the camera
-  context3D.update();
+  kinect3D.update(); // update the 3D kinect context
+
+  background(255,255,255); // clear the screen
   
- 
-  // draw scene Image
-  image(context3D.depthImage(), 0, 0);
-  background (255);
+  // draw depthImageMap
+  //image(kinect3D.depthImage(),0,0);
+  // image(kinect3D.userImage(),0,0);
+
+  drawCleats();
+
+  drawUsers();
   
-  // for all users from 1 to 10
-  int u;
-  for (u=1; u<=10; u++)
+  // draw the kinect cam
+  // kinect3D.drawCamFrustum();
+
+  // image(kinect3D.depthImage(), 0, 0); // draw scene Image
+}
+
+/**
+* Users (3d skeletons)
+*/
+
+void drawUsers(){
+  int[] userList = kinect3D.getUsers();
+  
+  for(int u=0;u<userList.length;u++)
   {
+    println("userList: "+userList[u]);
     // check if the skeleton is being tracked
-    if(context3D.isTrackingSkeleton(u))
+    if(kinect3D.isTrackingSkeleton(userList[u]))
+      drawSkeleton(userList[u]);
+
+    // drawCenterOfMass(userList[u]);
+  }
+}
+
+void drawCenterOfMass(int userId){
+  if(kinect3D.getCoM(userId,com))
     {
-      drawSkeleton(u);  // draw the skeleton
+      stroke(100,255,0);
+      strokeWeight(1);
+      beginShape(LINES);
+        vertex(com.x - 15,com.y,com.z);
+        vertex(com.x + 15,com.y,com.z);
+        
+        vertex(com.x,com.y - 15,com.z);
+        vertex(com.x,com.y + 15,com.z);
+
+        vertex(com.x,com.y,com.z - 15);
+        vertex(com.x,com.y,com.z + 15);
+      endShape();
+      
+      fill(0,255,100);
+      text(Integer.toString(userId),com.x,com.y,com.z);
     }
-  }
+}
+
+void drawSkeleton(int userId){
+  println("drawSkeleton - userId = " + userId);
+  
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
+}
+
+void onNewUser(SimpleOpenNI curContext,int userId){
+  println("onNewUser - userId: " + userId);
+  println("\tstart tracking skeleton");
+  
+  kinect3D.startTrackingSkeleton(userId);
+}
+
+void onLostUser(SimpleOpenNI curContext,int userId){
+  println("onLostUser - userId: " + userId);
+}
+
+void onVisibleUser(SimpleOpenNI curContext,int userId){
+  //println("onVisibleUser - userId: " + userId);
+}
 
 
-  contextRGB.update();
-  imgRGB = contextRGB.rgbImage();
- //image(imgRGB, 0, 0);   // affichage image video
+/**
+* drawCleats
+*/
 
-  //----- 1°) application du "mixeur de canaux" avec sortie sur canal Rouge
-  //---- coeff à appliquer 
-  // float coefRouge=2.5, coefVert=-2, coefBleu=-0; // orange
+void drawCleats(){
 
-  // float coefRouge=1, coefVert=2, coefBleu=-2; // jaune
- float coefRouge=3, coefVert=0, coefBleu=-2; // bleu
+  kinectRGB.update();
+  imgRGB = kinectRGB.rgbImage();
+  image(imgRGB, 0, 0, width/2, height/2);   // affichage image video
 
-  imgRGB.loadPixels(); // charge les pixels de la fenetre d'affichage
-         
-  for (int i = 0; i < width*height; i++) { // passe en revue les pixels de l'image - index 0 en premier
-  //------ JAUNE ET ORANGE -----//
-    float r = (red(imgRGB.pixels[i])*coefRouge) + (green(imgRGB.pixels[i])*coefVert) + (blue(imgRGB.pixels[i])*coefBleu); // la couleur rouge
-    //---- fonction mixeur de canaux
-    //---- le canal rouge est le canal de sortie et a pour coeff 1
-    //---- auquel on ajoute du vert avec coeff vert
-    //---- et du bleu avec coeff bleu
+  imgOrange = kinectRGB.rgbImage();
+  imgBleu = kinectRGB.rgbImage();
+  imgJaune = kinectRGB.rgbImage();
 
+  textSize(14) ;
+
+  // orange
+  imgOrange.loadPixels(); // charge les pixels de la fenetre d'affichage
+  for (int i = 0; i < width*height; i++) { 
+    float r = (red(imgOrange.pixels[i])*coefRouge_O) + (green(imgOrange.pixels[i])*coefVert_O) + (blue(imgOrange.pixels[i])*coefBleu_O); // la couleur rouge
     // les deux autres canaux restent inchangés
-    float g = green(imgRGB.pixels[i]); // la couleur verte
-    float b = blue(imgRGB.pixels[i]); // la couleur bleue
-
-  // //------ BLEU-----//
-  //   float b = (red(imgRGB.pixels[i])*coefRouge) + (green(imgRGB.pixels[i])*coefVert) + (blue(imgRGB.pixels[i])*coefBleu); // la couleur bleue
-  //   //---- fonction mixeur de canaux
-  //   //---- le canal rouge est le canal de sortie et a pour coeff 1
-  //   //---- auquel on ajoute du vert avec coeff vert
-  //   //---- et du bleu avec coeff bleu
-
-  //   // les deux autres canaux restent inchangés
-  //   float g = green(imgRGB.pixels[i]); // la couleur verte
-  //   float r = red(imgRGB.pixels[i]); // la couleur rouge
-    
-    imgRGB.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
-
+    float g = green(imgOrange.pixels[i]); // la couleur verte
+    float b = blue(imgOrange.pixels[i]); // la couleur bleue
+    imgOrange.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
   }
-         
-  imgRGB.updatePixels();  // met à jour les pixels 
-  image(imgRGB, 0, 0); 
+  imgOrange.updatePixels();  // met à jour les pixels 
+  // imgOrange.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  if(myFirstKey == 'o')
+    debugImageTreatment(imgOrange, coefRouge_O, coefVert_O, coefBleu_O, width/2, 0);
 
-  //----- 2°) transformation de l'image en monochrome en se basant sur le canal rouge
-
-  imgRGB.loadPixels(); // charge les pixels de la fenetre d'affichage
-
-  for (int i = 0; i < width*height; i++) { // passe en revue les pixels de l'image - index 0 en premier
-
-    float r = red(imgRGB.pixels[i]);// la couleur rouge
-    float g = red(imgRGB.pixels[i]); // la couleur verte
-    float b = red(imgRGB.pixels[i]); // la couleur bleue
-
-    imgRGB.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
-
+  // jaune
+  imgJaune.loadPixels(); // charge les pixels de la fenetre d'affichage
+  for (int i = 0; i < width*height; i++) { 
+    float g = (red(imgJaune.pixels[i])*coefRouge_J) + (green(imgJaune.pixels[i])*coefVert_J) + (blue(imgJaune.pixels[i])*coefBleu_J); // la couleur rouge
+    // les deux autres canaux restent inchangés
+    float r = red(imgJaune.pixels[i]); // la couleur verte
+    float b = blue(imgJaune.pixels[i]); // la couleur bleue
+    imgJaune.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
   }
+  imgJaune.updatePixels();  // met à jour les pixels 
+  // imgJaune.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  if(myFirstKey == 'j')
+    debugImageTreatment(imgJaune, coefRouge_J, coefVert_J, coefBleu_J, 0, height/2);
 
-  imgRGB.updatePixels();  // met à jour les pixels
+
+  // bleu
+  imgBleu.loadPixels(); // charge les pixels de la fenetre d'affichage
+  for (int i = 0; i < width*height; i++) { 
+    float b = (red(imgBleu.pixels[i])*coefRouge_B) + (green(imgBleu.pixels[i])*coefVert_B) + (blue(imgBleu.pixels[i])*coefBleu_B); // la couleur rouge
+    // les deux autres canaux restent inchangés
+    float r = red(imgBleu.pixels[i]); // la couleur verte
+    float g = green(imgBleu.pixels[i]); // la couleur bleue
+    imgBleu.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
+  }
+  imgBleu.updatePixels();  // met à jour les pixels 
+  // imgBleu.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  if(myFirstKey == 'b')
+    debugImageTreatment(imgBleu, coefRouge_B, coefVert_B, coefBleu_B, width/2, height/2);
 
 
-  //------ on applique filtre de seuillage --- 
-  imgRGB.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+//   //--- on récupère l'image transformée --- 
+//   // imgRGB=get(0,0,width,height); // récupère image à partir fenetre d'affichage 
 
-  //--- on récupère l'image transformée --- 
-  // imgRGB=get(0,0,width,height); // récupère image à partir fenetre d'affichage 
+//   //--- on rebascule dans OpenCV --- 
+//   opencv.copy(imgRGB); // charge l'image modifiée dans le buffer opencv
 
-  //--- on rebascule dans OpenCV --- 
-  opencv.copy(imgRGB); // charge l'image modifiée dans le buffer opencv
+//   // trouve les formes à l'aide de la librairie openCV
+//   // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
+//   Blob[] blobs = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
 
-  // trouve les formes à l'aide de la librairie openCV
-  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobs = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
+//   //recharge l'image vidéo
+//   noTint();
+//   //image(opencv.image(), 0, 0 );   // affichage image video
 
-  //recharge l'image vidéo
-  noTint();
-  //image(opencv.image(), 0, 0 );   // affichage image video
+//   // draw blob results
+//   for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
 
-  // draw blob results
-  for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
-
-    // tracé des formes détectées
-    // beginShape(); // début tracé forme complexe
+//     // tracé des formes détectées
+//     // beginShape(); // début tracé forme complexe
     
-    // for( int j=0; j<blobs[i].points.length; j++ ) {
-    //   vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // tracé des points de la forme
-    // }
+//     // for( int j=0; j<blobs[i].points.length; j++ ) {
+//     //   vertex( blobs[i].points[j].x, blobs[i].points[j].y ); // tracé des points de la forme
+//     // }
 
-    int maxX=0;
-    int maxY=0;
+//     int maxX=0;
+//     int maxY=0;
 
-    int minX=0;
-    int minY=0;
+//     int minX=0;
+//     int minY=0;
 
-    for( int j=0; j<blobs[i].points.length; j++ ) {
-      // Object p = blobs[i].points[j];
-      // println("p: "+p);
-      if (j==0){
-        maxX=blobs[i].points[j].x;
-        maxY=blobs[i].points[j].y;
-        minX=blobs[i].points[j].x;
-        minY=blobs[i].points[j].y;
-      }
-      else if (maxX<blobs[i].points[j].x){
-        maxX=blobs[i].points[j].x;
-        maxY=blobs[i].points[j].y;
-      }
-      else if (minX>blobs[i].points[j].x){
-        minX=blobs[i].points[j].x;
-        minY=blobs[i].points[j].y;
-      }
+//     for( int j=0; j<blobs[i].points.length; j++ ) {
+//       // Object p = blobs[i].points[j];
+//       // println("p: "+p);
+//       if (j==0){
+//         maxX=blobs[i].points[j].x;
+//         maxY=blobs[i].points[j].y;
+//         minX=blobs[i].points[j].x;
+//         minY=blobs[i].points[j].y;
+//       }
+//       else if (maxX<blobs[i].points[j].x){
+//         maxX=blobs[i].points[j].x;
+//         maxY=blobs[i].points[j].y;
+//       }
+//       else if (minX>blobs[i].points[j].x){
+//         minX=blobs[i].points[j].x;
+//         minY=blobs[i].points[j].y;
+//       }
+//     }
+
+//     line(maxX, maxY, minX, minY);
+    
+//   }
+//     // endShape(CLOSE); // tracé forme complexe
+}
+
+void keyPressed() {
+  // println("key pressed : " + key);
+  float increment = 0.05;
+  if(key == 'o' || key == 'j' || key == 'b'){
+    myFirstKey = key;
+  }else{
+    switch(myFirstKey){
+      case 'o':
+        switch(key){
+          case 'q':
+            coefRouge_O += increment;
+            break;
+          case 'w':
+            coefRouge_O -= increment;
+            break;
+          case 's':
+            coefVert_O += increment;
+            break;
+          case 'x':
+            coefVert_O -= increment;
+            break;
+          case 'd':
+            coefBleu_O += increment;
+            break;
+          case 'c':
+            coefBleu_O -= increment;
+            break;
+        }
+      break;
+      case 'j':
+        switch(key){
+          case 'q':
+            coefRouge_J += increment;
+            break;
+          case 'w':
+            coefRouge_J -= increment;
+            break;
+          case 's':
+            coefVert_J += increment;
+            break;
+          case 'x':
+            coefVert_J -= increment;
+            break;
+          case 'd':
+            coefBleu_J += increment;
+            break;
+          case 'c':
+            coefBleu_J -= increment;
+            break;
+        }
+        break;
+      case 'b':
+        switch(key){
+          case 'q':
+            coefRouge_B += increment;
+            break;
+          case 'w':
+            coefRouge_B -= increment;
+            break;
+          case 's':
+            coefVert_B += increment;
+            break;
+          case 'x':
+            coefVert_B -= increment;
+            break;
+          case 'd':
+            coefBleu_B += increment;
+            break;
+          case 'c':
+            coefBleu_B -= increment;
+            break;
+        }
+        break;
     }
-
-    line(maxX, maxY, minX, minY);
-    
-
-    // endShape(CLOSE); // tracé forme complexe
-
-  }
-
-
-}
-
-// draw the skeleton with the selected joints
-void drawSkeleton(int userId)
-{
-  context3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
-  context3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
-  context3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
-  context3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
-
-}
-
-// when a user enters the field of view
-void onNewUser(int userId)
-{
-  println("New User Detected - userId: " + userId);
-
-  if(autoCalib)
-    context3D.requestCalibrationSkeleton(userId,true);
-  else    
-    context3D.startPoseDetection("Psi",userId);
-}
- 
-// when a person ('user') leaves the field of view 
-void onLostUser(int userId)
-{
-  println("User Lost - userId: " + userId);
-}
-
-// when calibration begins
-void onStartCalibration(int userId)
-{
-  println("Beginning Calibration - userId: " + userId);
-}
- 
-// when calibaration ends - successfully or unsucessfully 
-void onEndCalibration(int userId, boolean successfull)
-{
-  println("Calibration of userId: " + userId + ", successfull: " + successfull);
- 
-  if (successfull) 
-  { 
-    println("  User calibrated !!!");
- 
-    // begin skeleton tracking
-    context3D.startTrackingSkeleton(userId); 
-  } 
-  else 
-  { 
-    println("  Failed to calibrate user !!!");
- 
-    // Start pose detection
-    context3D.startPoseDetection("Psi", userId);
   }
 }
 
-// when a user begins a pose
-void onStartPose(String pose,int userId)
-{
-  println("onStartPose - userId: " + userId + ", pose: " + pose);
-  println(" stop pose detection");
-// stop pose detection
-  context3D.stopPoseDetection(userId);
-  // start attempting to calibrate the skeleton 
-  context3D.requestCalibrationSkeleton(userId, true);
- 
+
+
+void keyReleased() {
+  if(key == 'o' || key == 'j' || key == 'b')
+    myFirstKey = '0';
+
 }
 
-void onEndPose(String pose,int userId)
-{
-  println("onEndPose - userId: " + userId + ", pose: " + pose);
-}
 
+void debugImageTreatment(PImage img, float coefR, float coefV, float coefB, int x, int y){
+  image(img, x, y, width/2, height/2); 
+  text("coefRouge = "+coefR, x, y+20);
+  text("coefVert = "+coefV, x, y+40);
+  text("coefBleu = "+coefB, x, y+60);
+}
