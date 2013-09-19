@@ -1,22 +1,36 @@
 import SimpleOpenNI.*;
 import hypermedia.video.*; // importe la librairie vidéo et reconnaissance visuelle OpenCV
+// Java's Color class. Used to convert between RGB and HSB colorspaces
+import java.awt.Color;
 
 SimpleOpenNI kinect3D;
 boolean      autoCalib=true;
 
 PImage       imgRGB; // déclare un/des objets PImage (conteneur d'image)
-PImage       imgOrange;
-float        coefRouge_O, coefVert_O, coefBleu_O;
+PImage       imgRGBOrange, imgRGBJaune, imgRGBBleu;
+color        color_o = color(246,16,54);
+// int          hsb_o;
+float        colorH_O, colorS_O, colorB_O;
 
 PImage       imgBleu;
-float        coefRouge_B, coefVert_B, coefBleu_B;
+color        color_b = color(86,127,173);
+// int          hsb_b; 
+float        colorH_B, colorS_B, colorB_B;
 
 PImage       imgJaune;
-float        coefRouge_J, coefVert_J, coefBleu_J;
+color        color_j = color(215,176,81);
+// int          hsb_j; 
+float        colorH_J, colorS_J, colorB_J;
+
+// How much to saturate the image by
+float saturation = 1;
+// The tolerance when comparing hues
+float tolerance = 0.1f;
+
 
 char       myFirstKey;
 
-//OpenCV opencv; // déclare un objet OpenCV principal
+// OpenCV opencv; // déclare un objet OpenCV principal
 SimpleOpenNI kinectRGB; // déclare un objet SimpleOpenNI 
 
 //------ déclaration des variables de couleur utiles ---- 
@@ -82,25 +96,48 @@ void setup()
   kinectRGB = new SimpleOpenNI(this);
   kinectRGB.enableRGB();
   
-  coefRouge_O=1.1;  // 100 % de rouge
-  coefVert_O=1.5;   // 80 % de vert
-  coefBleu_O=-2;    // -200% de bleu
+  // Orange
+  int r = (color_o >> 16) & 0xFF;
+  int g = (color_o >> 8) & 0xFF;
+  int b = color_o & 0xFF;
+  float[] hsb = Color.RGBtoHSB(r, g, b, null);
+  colorH_O = hsb[0];
+  colorS_O = hsb[1];
+  colorB_O = hsb[2];
+  println("RGB O: (" + r + ", " + g + ", " + b + ")");
+  println("HSB O: (" + (colorH_O*360) + ", " + (colorS_O*100) + ", " + (colorB_O*100) +")");
 
-  coefRouge_J=-1;   // 100 % de rouge
-  coefVert_J=1;     // 80 % de vert
-  coefBleu_J=-2;    // -200% de bleu
+  // Jaune
+  r = (color_j >> 16) & 0xFF;
+  g = (color_j >> 8) & 0xFF;
+  b = color_j & 0xFF;
+  hsb = Color.RGBtoHSB(r, g, b, null);
+  colorH_J = hsb[0];
+  colorS_J = hsb[1];
+  colorB_J = hsb[2];
+  println("RGB J: (" + r + ", " + g + ", " + b + ")");
+  println("HSB J: (" + (colorH_J*360) + ", " + (colorS_J*100) + ", " + (colorB_J*100) +")");
 
-  coefRouge_B=-2;   // 100 % de rouge
-  coefVert_B=1.8;   // 80 % de vert
-  coefBleu_B=2;     // -200% de bleu
+  // bleu
+  r = (color_b >> 16) & 0xFF;
+  g = (color_b >> 8) & 0xFF;
+  b = color_b & 0xFF;
+  hsb = Color.RGBtoHSB(r, g, b, null);
+  colorH_B = hsb[0];
+  colorS_B = hsb[1];
+  colorB_B = hsb[2];
+  println("RGB B: (" + r + ", " + g + ", " + b + ")");
+  println("HSB B: (" + (colorH_B*360) + ", " + (colorS_B*100) + ", " + (colorB_B*100) +")");
+
 
   // --- initialise objet OpenCV à partir du parent This
-//  opencv = new OpenCV(this);
-//  opencv.allocate(640,480);
+  // opencv = new OpenCV(this);
+  // opencv.allocate(640,480);
 
-  // imgRGB = createImage (640,480, RGB);
-
-
+  imgRGB = createImage (640,480, RGB);
+  imgRGBOrange = createImage (640,480, RGB);
+  imgRGBJaune = createImage (640,480, RGB);
+  imgRGBBleu = createImage (640,480, RGB);
 
 }
 
@@ -111,7 +148,7 @@ void draw()
   background(255,255,255); // clear the screen
   
   // draw depthImageMap
-  //image(kinect3D.depthImage(),0,0);
+  // image(kinect3D.depthImage(),0,0);
   // image(kinect3D.userImage(),0,0);
 
   drawCleats();
@@ -192,65 +229,134 @@ void onVisibleUser(SimpleOpenNI curContext,int userId){
 /**
 * drawCleats
 */
-
 void drawCleats(){
 
   kinectRGB.update();
   imgRGB = kinectRGB.rgbImage();
   image(imgRGB, 0, 0, width/2, height/2);   // affichage image video
 
-  imgOrange = kinectRGB.rgbImage();
-  imgBleu = kinectRGB.rgbImage();
-  imgJaune = kinectRGB.rgbImage();
-
   textSize(14) ;
 
+  int rgb;
+  int r, g, b; // Individual RGB components
+  float[] hsb; // HSB color
+  float h, s, br; // Individual HSB components
+
+
   // orange
-  imgOrange.loadPixels(); // charge les pixels de la fenetre d'affichage
+  // imgOrange = kinectRGB.rgbImage();
+  imgRGBOrange.loadPixels(); // charge les pixels
   for (int i = 0; i < width*height; i++) { 
-    float r = (red(imgOrange.pixels[i])*coefRouge_O) + (green(imgOrange.pixels[i])*coefVert_O) + (blue(imgOrange.pixels[i])*coefBleu_O); // la couleur rouge
-    // les deux autres canaux restent inchangés
-    float g = green(imgOrange.pixels[i]); // la couleur verte
-    float b = blue(imgOrange.pixels[i]); // la couleur bleue
-    imgOrange.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
+    rgb = imgRGB.pixels[i];
+
+    // Get individual RGB color components from the pixels color
+    // (check "http://processing.org/reference/rightshift.html" on the reference)
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >> 8) & 0xFF;
+    b = rgb & 0xFF;
+
+    hsb = Color.RGBtoHSB(r, g, b, null);
+
+    // The individual HSB components
+    h = hsb[0];
+    s = hsb[1]+saturation; // Saturarate colors, to make them more distinguishable
+    s = constrain(s, 0, 1); // But maintain values within the appropriate range
+    br = hsb[2];
+
+    // Test if the found color is similar enough to the color we are looking for
+    // If it's not, the pixel should be black
+    imgRGBOrange.pixels[i] = 0x00000000;
+     
+    // Starting with the hue, because it is the most distinctive component for our purpose
+    if (h > colorH_O-tolerance && h < colorH_O+tolerance) {
+      // The other components are still important for better precision
+      if(s >= colorS_O && br >= colorB_O) {
+        // If the color is within range, the pixel will be white
+        imgRGBOrange.pixels[i] = 0xFFFFFFFF;
+      }
+    }
   }
-  imgOrange.updatePixels();  // met à jour les pixels 
-  // imgOrange.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  imgRGBOrange.updatePixels();  // met à jour les pixels 
+  // imgRGBOrange.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
   if(myFirstKey == 'o')
-    debugImageTreatment(imgOrange, coefRouge_O, coefVert_O, coefBleu_O, width/2, 0);
+    debugImageTreatment(imgRGBOrange, width/2, 0);
 
   // jaune
-  imgJaune.loadPixels(); // charge les pixels de la fenetre d'affichage
+  kinectRGB.update();
+  imgRGBJaune.loadPixels(); // charge les pixels de la fenetre d'affichage
   for (int i = 0; i < width*height; i++) { 
-    float g = (red(imgJaune.pixels[i])*coefRouge_J) + (green(imgJaune.pixels[i])*coefVert_J) + (blue(imgJaune.pixels[i])*coefBleu_J); // la couleur rouge
-    // les deux autres canaux restent inchangés
-    float r = red(imgJaune.pixels[i]); // la couleur verte
-    float b = blue(imgJaune.pixels[i]); // la couleur bleue
-    imgJaune.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
+    rgb = imgRGB.pixels[i];
+    
+    // Get individual RGB color components from the pixels color
+    // (check "http://processing.org/reference/rightshift.html" on the reference)
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >> 8) & 0xFF;
+    b = rgb & 0xFF;
+
+    hsb = Color.RGBtoHSB(r, g, b, null);
+
+    // The individual HSB components
+    h = hsb[0];
+    s = hsb[1]+saturation; // Saturarate colors, to make them more distinguishable
+    s = constrain(s, 0, 1); // But maintain values within the appropriate range
+    br = hsb[2];
+
+    // Test if the found color is similar enough to the color we are looking for
+    // If it's not, the pixel should be black
+    imgRGBJaune.pixels[i] = 0x00000000;
+     
+    // Starting with the hue, because it is the most distinctive component for our purpose
+    if (h > colorH_J-tolerance && h < colorH_J+tolerance) {
+      // The other components are still important for better precision
+      // if(s >= colorS_J && br >= colorB_J) {
+        // If the color is within range, the pixel will be white
+        imgRGBJaune.pixels[i] = 0xFFFFFFFF;
+      // }
+    }
   }
-  imgJaune.updatePixels();  // met à jour les pixels 
-  // imgJaune.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  imgRGBJaune.updatePixels();  // met à jour les pixels 
+  // imgRGBJaune.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
   if(myFirstKey == 'j')
-    debugImageTreatment(imgJaune, coefRouge_J, coefVert_J, coefBleu_J, 0, height/2);
+    debugImageTreatment(imgRGBJaune, 0, height/2);
 
 
   // bleu
-  imgBleu.loadPixels(); // charge les pixels de la fenetre d'affichage
+  imgRGBBleu = kinectRGB.rgbImage();
+  imgRGBBleu.loadPixels(); // charge les pixels de la fenetre d'affichage
   for (int i = 0; i < width*height; i++) { 
-    float b = (red(imgBleu.pixels[i])*coefRouge_B) + (green(imgBleu.pixels[i])*coefVert_B) + (blue(imgBleu.pixels[i])*coefBleu_B); // la couleur rouge
-    // les deux autres canaux restent inchangés
-    float r = red(imgBleu.pixels[i]); // la couleur verte
-    float g = green(imgBleu.pixels[i]); // la couleur bleue
-    imgBleu.pixels[i] = color(r, g, b); // modifie le pixel en fonction 
+    rgb = imgRGB.pixels[i];
+    
+    // Get individual RGB color components from the pixels color
+    // (check "http://processing.org/reference/rightshift.html" on the reference)
+    r = (rgb >> 16) & 0xFF;
+    g = (rgb >> 8) & 0xFF;
+    b = rgb & 0xFF;
+
+    hsb = Color.RGBtoHSB(r, g, b, null);
+
+    // The individual HSB components
+    h = hsb[0];
+    s = hsb[1]+saturation; // Saturarate colors, to make them more distinguishable
+    s = constrain(s, 0, 1); // But maintain values within the appropriate range
+    br = hsb[2];
+
+    // Test if the found color is similar enough to the color we are looking for
+    // If it's not, the pixel should be black
+    imgRGBBleu.pixels[i] = 0x00000000;
+     
+    // Starting with the hue, because it is the most distinctive component for our purpose
+    if (h > colorH_B-tolerance && h < colorH_B+tolerance) {
+      // The other components are still important for better precision
+      // if(s >= colorS_B && br >= colorB_B) {
+        // If the color is within range, the pixel will be white
+        imgRGBBleu.pixels[i] = 0xFFFFFFFF;
+      // }
+    }
   }
-  imgBleu.updatePixels();  // met à jour les pixels 
-  // imgBleu.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
+  imgRGBBleu.updatePixels();  // met à jour les pixels 
+  // imgRGBBleu.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
   if(myFirstKey == 'b')
-    debugImageTreatment(imgBleu, coefRouge_B, coefVert_B, coefBleu_B, width/2, height/2);
-
-
-//   //--- on récupère l'image transformée --- 
-//   // imgRGB=get(0,0,width,height); // récupère image à partir fenetre d'affichage 
+    debugImageTreatment(imgRGBBleu, width/2, height/2);
 
 //   //--- on rebascule dans OpenCV --- 
 //   opencv.copy(imgRGB); // charge l'image modifiée dans le buffer opencv
@@ -309,75 +415,91 @@ void keyPressed() {
   float increment = 0.05;
   if(key == 'o' || key == 'j' || key == 'b'){
     myFirstKey = key;
-  }else{
-    switch(myFirstKey){
-      case 'o':
-        switch(key){
-          case 'q':
-            coefRouge_O += increment;
-            break;
-          case 'w':
-            coefRouge_O -= increment;
-            break;
-          case 's':
-            coefVert_O += increment;
-            break;
-          case 'x':
-            coefVert_O -= increment;
-            break;
-          case 'd':
-            coefBleu_O += increment;
-            break;
-          case 'c':
-            coefBleu_O -= increment;
-            break;
-        }
-      break;
-      case 'j':
-        switch(key){
-          case 'q':
-            coefRouge_J += increment;
-            break;
-          case 'w':
-            coefRouge_J -= increment;
-            break;
-          case 's':
-            coefVert_J += increment;
-            break;
-          case 'x':
-            coefVert_J -= increment;
-            break;
-          case 'd':
-            coefBleu_J += increment;
-            break;
-          case 'c':
-            coefBleu_J -= increment;
-            break;
-        }
+  }
+  if(key == 'r' || key == 'f' || key == 't' || key == 'g'){
+    // switch(myFirstKey){
+    //   case 'o':
+    //     switch(key){
+    //       case 'q':
+    //         coefRouge_O += increment;
+    //         break;
+    //       case 'w':
+    //         coefRouge_O -= increment;
+    //         break;
+    //       case 's':
+    //         coefVert_O += increment;
+    //         break;
+    //       case 'x':
+    //         coefVert_O -= increment;
+    //         break;
+    //       case 'd':
+    //         coefBleu_O += increment;
+    //         break;
+    //       case 'c':
+    //         coefBleu_O -= increment;
+    //         break;
+    //     }
+    //   break;
+    //   case 'j':
+    //     switch(key){
+    //       case 'q':
+    //         coefRouge_J += increment;
+    //         break;
+    //       case 'w':
+    //         coefRouge_J -= increment;
+    //         break;
+    //       case 's':
+    //         coefVert_J += increment;
+    //         break;
+    //       case 'x':
+    //         coefVert_J -= increment;
+    //         break;
+    //       case 'd':
+    //         coefBleu_J += increment;
+    //         break;
+    //       case 'c':
+    //         coefBleu_J -= increment;
+    //         break;
+    //     }
+    //     break;
+    //   case 'b':
+    //     switch(key){
+    //       case 'q':
+    //         coefRouge_B += increment;
+    //         break;
+    //       case 'w':
+    //         coefRouge_B -= increment;
+    //         break;
+    //       case 's':
+    //         coefVert_B += increment;
+    //         break;
+    //       case 'x':
+    //         coefVert_B -= increment;
+    //         break;
+    //       case 'd':
+    //         coefBleu_B += increment;
+    //         break;
+    //       case 'c':
+    //         coefBleu_B -= increment;
+    //         break;
+    //     }
+    //     break;
+    // }
+    switch(key) {
+      case 'r':
+        tolerance += 0.01;
         break;
-      case 'b':
-        switch(key){
-          case 'q':
-            coefRouge_B += increment;
-            break;
-          case 'w':
-            coefRouge_B -= increment;
-            break;
-          case 's':
-            coefVert_B += increment;
-            break;
-          case 'x':
-            coefVert_B -= increment;
-            break;
-          case 'd':
-            coefBleu_B += increment;
-            break;
-          case 'c':
-            coefBleu_B -= increment;
-            break;
-        }
+      case 'f':
+        tolerance -= 0.01;
+        break;
+      case 't':
+        tolerance += 0.1;
+        break;
+      case 'g':
+        tolerance -= 0.1;
         break;
     }
+    println("tolerance = "+tolerance);
   }
 }
 
@@ -389,10 +511,6 @@ void keyReleased() {
 
 }
 
-
-void debugImageTreatment(PImage img, float coefR, float coefV, float coefB, int x, int y){
+void debugImageTreatment(PImage img, int x, int y){
   image(img, x, y, width/2, height/2); 
-  text("coefRouge = "+coefR, x, y+20);
-  text("coefVert = "+coefV, x, y+40);
-  text("coefBleu = "+coefB, x, y+60);
 }
