@@ -151,71 +151,6 @@ void draw()
 }
 
 /**
-* Users (3d skeletons)
-*/
-
-void drawUsers(){
-  int[] userList = kinect3D.getUsers();
-  
-  for(int u=0;u<userList.length;u++)
-  {
-    println("userList: "+userList[u]);
-    // check if the skeleton is being tracked
-    if(kinect3D.isTrackingSkeleton(userList[u]))
-      drawSkeleton(userList[u]);
-
-    // drawCenterOfMass(userList[u]);
-  }
-}
-
-void drawCenterOfMass(int userId){
-  if(kinect3D.getCoM(userId,com))
-    {
-      stroke(100,255,0);
-      strokeWeight(1);
-      beginShape(LINES);
-        vertex(com.x - 15,com.y,com.z);
-        vertex(com.x + 15,com.y,com.z);
-        
-        vertex(com.x,com.y - 15,com.z);
-        vertex(com.x,com.y + 15,com.z);
-
-        vertex(com.x,com.y,com.z - 15);
-        vertex(com.x,com.y,com.z + 15);
-      endShape();
-      
-      fill(0,255,100);
-      text(Integer.toString(userId),com.x,com.y,com.z);
-    }
-}
-
-void drawSkeleton(int userId){
-  println("drawSkeleton - userId = " + userId);
-  
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
-}
-
-void onNewUser(SimpleOpenNI curContext,int userId){
-  println("onNewUser - userId: " + userId);
-  println("\tstart tracking skeleton");
-  
-  kinect3D.startTrackingSkeleton(userId);
-}
-
-void onLostUser(SimpleOpenNI curContext,int userId){
-  println("onLostUser - userId: " + userId);
-}
-
-void onVisibleUser(SimpleOpenNI curContext,int userId){
-  //println("onVisibleUser - userId: " + userId);
-}
-
-
-/**
 * drawCleats
 */
 void drawCleats(){
@@ -397,7 +332,6 @@ void drawCleats(){
     stroke(255,255,0);
     line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
   }
-
 }
 
 Point[] getMaxAndMinPoints(Point[] points){
@@ -433,6 +367,76 @@ Point[] getMaxAndMinPoints(Point[] points){
   return ext;
 }
 
+
+/**
+* Users (3d skeletons)
+*/
+
+void drawUsers(){
+  int[] userList = kinect3D.getUsers();
+  
+  for(int u=0;u<userList.length;u++)
+  {
+    println("userList: "+userList[u]);
+    // check if the skeleton is being tracked
+    if(kinect3D.isTrackingSkeleton(userList[u]))
+      drawSkeleton(userList[u]);
+
+    // drawCenterOfMass(userList[u]);
+  }
+}
+
+void drawCenterOfMass(int userId){
+  if(kinect3D.getCoM(userId,com))
+    {
+      stroke(100,255,0);
+      strokeWeight(1);
+      beginShape(LINES);
+        vertex(com.x - 15,com.y,com.z);
+        vertex(com.x + 15,com.y,com.z);
+        
+        vertex(com.x,com.y - 15,com.z);
+        vertex(com.x,com.y + 15,com.z);
+
+        vertex(com.x,com.y,com.z - 15);
+        vertex(com.x,com.y,com.z + 15);
+      endShape();
+      
+      fill(0,255,100);
+      text(Integer.toString(userId),com.x,com.y,com.z);
+    }
+}
+
+void drawSkeleton(int userId){
+  println("drawSkeleton - userId = " + userId);
+  stroke(0,0,0);
+  
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
+  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
+}
+
+void onNewUser(SimpleOpenNI curContext,int userId){
+  println("onNewUser - userId: " + userId);
+  println("\tstart tracking skeleton");
+  
+  kinect3D.startTrackingSkeleton(userId);
+}
+
+void onLostUser(SimpleOpenNI curContext,int userId){
+  println("onLostUser - userId: " + userId);
+}
+
+void onVisibleUser(SimpleOpenNI curContext,int userId){
+  //println("onVisibleUser - userId: " + userId);
+}
+
+
+/**
+* events
+*/
 void keyPressed() {
   // println("key pressed : " + key);
   float increment = 0.05;
@@ -458,13 +462,15 @@ void keyPressed() {
   }
 }
 
-
-
 void keyReleased() {
   if(key == 'o' || key == 'j' || key == 'b')
     myFirstKey = '0';
 
 }
+
+/**
+* helpers
+*/
 
 void debugImageTreatment(PImage img, int x, int y){
   image(img, x, y, width/2, height/2); 
