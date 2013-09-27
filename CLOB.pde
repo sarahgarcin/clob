@@ -44,6 +44,7 @@ int          src_width = 640;
 int          src_height = 480;
 int          control_width = 64*3;
 int          control_height = 48*3;
+int          marge = 10;
 
 float        x_factor = 1.6;
 float        y_factor = 1.6;
@@ -51,7 +52,7 @@ float        y_factor = 1.6;
 void setup()
 {
   // size(640, 468);
-  size(control_width+display_width, display_height);
+  size(control_width+display_width+marge*2, display_height+marge*2);
 
   // println("");
   // --- initialisation context kinect 3D (infrarouge)---
@@ -144,6 +145,22 @@ void draw()
   // draw the kinect cam
   // kinect3D.drawCamFrustum();
 
+  stroke(0,0,0);
+  strokeWeight(1);
+  line(marge+control_width-1, marge-1, marge+control_width+10, marge-1);
+  line(marge+control_width-1, marge-1, marge+control_width-1, marge+10);
+
+  line(width-marge+1, marge-1, width-marge-10, marge-1);
+  line(width-marge+1, marge-1, width-marge+1, marge+10);
+
+  line(width-marge+1, height-marge+1, width-marge-10, height-marge+1);
+  line(width-marge+1, height-marge+1, width-marge+1, height-marge-10);
+
+
+  line(marge+control_width-1, height-marge+1, marge+control_width+10, height-marge+1);
+  line(marge+control_width-1, height-marge+1, marge+control_width-1, height-marge-10);
+
+
   // image(kinect3D.depthImage(), 0, 0); // draw scene Image
 }
 
@@ -155,19 +172,27 @@ void drawCleats(){
   kinectRGB.update();
   imgRGB = kinectRGB.rgbImage();
   debugImageTreatment(imgRGB, 0, 0);
-  // image(imgRGB, control_width, 0, src_width*x_factor, src_height*y_factor); // debug purpose
+  image(imgRGB, control_width+marge, marge, src_width*x_factor, src_height*y_factor); // debug purpose
 
   textSize(14) ;
-
+  strokeWeight(0);
   // orange
   imgRGBOrange = filterHSBImage(colorH_O, colorS_O, colorB_O);
-  debugImageTreatment(imgRGBOrange, 0, (control_height+10));
+  fill(Color.HSBtoRGB(colorH_O, colorS_O, colorB_O));
+  rect(0, marge+control_height+10, control_width, 10);
+  debugImageTreatment(imgRGBOrange, 0, (control_height+20));
+  
   // jaune
   imgRGBJaune = filterHSBImage(colorH_J, colorS_J, colorB_J);
-  debugImageTreatment(imgRGBJaune, 0, (control_height+10)*2);
+  fill(Color.HSBtoRGB(colorH_J, colorS_J, colorB_J));
+  rect(0, marge+(control_height+20)*2-10, control_width, 10);
+  debugImageTreatment(imgRGBJaune, 0, (control_height+20)*2);
+  
   // // bleu
   imgRGBBleu = filterHSBImage(colorH_B, colorS_B, colorB_B);
-  debugImageTreatment(imgRGBBleu, 0, (control_height+10)*3);
+  fill(Color.HSBtoRGB(colorH_B, colorS_B, colorB_B));
+  rect(0, marge+(control_height+20)*3-10, control_width, 10);
+  debugImageTreatment(imgRGBBleu, 0, (control_height+20)*3);
 
   strokeWeight(cleat_width);
   blobsAndDrawLines(imgRGBOrange, orange);  // draw blob results
@@ -229,7 +254,7 @@ void blobsAndDrawLines(PImage imgrgb, color col){
     // tracé des formes détectées
     Point[] ext = getMaxAndMinPoints(blobs[i].points);
     stroke(col);
-    line(control_width+(ext[0].x*x_factor), ext[0].y*y_factor, control_width+(ext[1].x*x_factor), ext[1].y*y_factor);
+    line(control_width+marge+(ext[0].x*x_factor), marge+ext[0].y*y_factor, marge+control_width+(ext[1].x*x_factor), marge+ext[1].y*y_factor);
   } 
 }
 
@@ -285,26 +310,26 @@ void drawUsers(){
   }
 }
 
-void drawCenterOfMass(int userId){
-  if(kinect3D.getCoM(userId,com))
-    {
-      stroke(100,255,0);
-      strokeWeight(1);
-      beginShape(LINES);
-        vertex(com.x - 15,com.y,com.z);
-        vertex(com.x + 15,com.y,com.z);
+// void drawCenterOfMass(int userId){
+//   if(kinect3D.getCoM(userId,com))
+//     {
+//       stroke(100,255,0);
+//       strokeWeight(1);
+//       beginShape(LINES);
+//         vertex(com.x - 15,com.y,com.z);
+//         vertex(com.x + 15,com.y,com.z);
         
-        vertex(com.x,com.y - 15,com.z);
-        vertex(com.x,com.y + 15,com.z);
+//         vertex(com.x,com.y - 15,com.z);
+//         vertex(com.x,com.y + 15,com.z);
 
-        vertex(com.x,com.y,com.z - 15);
-        vertex(com.x,com.y,com.z + 15);
-      endShape();
+//         vertex(com.x,com.y,com.z - 15);
+//         vertex(com.x,com.y,com.z + 15);
+//       endShape();
       
-      fill(0,255,100);
-      text(Integer.toString(userId),com.x,com.y,com.z);
-    }
-}
+//       fill(0,255,100);
+//       text(Integer.toString(userId),com.x,com.y,com.z);
+//     }
+// }
 
 void drawSkeleton(int userId){
   println("drawSkeleton - userId = " + userId);
@@ -338,18 +363,16 @@ void drawLimb(int userId,int jointType1,int jointType2){
   kinect3D.convertRealWorldToProjective(jointPos1, convertedJointPos1);
   kinect3D.convertRealWorldToProjective(jointPos2, convertedJointPos2);
 
-  println("x_factor: "+x_factor);
-  println("y_factor: "+y_factor);
+  // println("x_factor: "+x_factor);
+  // println("y_factor: "+y_factor);
 
   stroke(0,0,0);
   strokeWeight(2);
   line(
-    control_width+(convertedJointPos1.x*x_factor),
-    // control_width+(convertedJointPos1.x),
-    convertedJointPos1.y*y_factor,
-    control_width+(convertedJointPos2.x*x_factor),
-    // control_width+(convertedJointPos2.x),
-    convertedJointPos2.y*y_factor
+    marge+control_width+(convertedJointPos1.x*x_factor),
+    marge+convertedJointPos1.y*y_factor,
+    marge+control_width+(convertedJointPos2.x*x_factor),
+    marge+convertedJointPos2.y*y_factor
   );
   // line((jointPos1.x),jointPos1.y,(jointPos2.x),jointPos2.y);
 }
@@ -375,33 +398,114 @@ void onVisibleUser(SimpleOpenNI curContext,int userId){
 */
 void keyPressed() {
   // println("key pressed : " + key);
-  float increment = 0.05;
   if(key == 'o' || key == 'j' || key == 'b'){
     myFirstKey = key;
   }
-  if(key == 'r' || key == 'f' || key == 't' || key == 'g'){
-    switch(key) {
-      case 'r':
-        tolerance += 0.01;
-        break;
-      case 'f':
-        tolerance -= 0.01;
-        break;
-      case 't':
-        tolerance += 0.1;
-        break;
-      case 'g':
-        tolerance -= 0.1;
-        break;
+  if(key == 'a' || key == 'q' || key == 'z' || key == 's' || key == 'e' || key == 'd'){
+    switch(myFirstKey){
+      case 'o':
+        switch(key) {
+          case 'a':
+            colorH_O += 0.01;
+            println("colorH_O = "+colorH_O);
+            break;
+          case 'q':
+            colorH_O -= 0.01;
+            println("colorH_O = "+colorH_O);
+            break;
+          case 'z':
+            colorS_O += 0.01;
+            if(colorS_O > 0.999) colorS_O = 0.999;
+            println("colorS_O = "+colorS_O);
+            break;
+          case 's':
+            colorS_O -= 0.01;
+            if(colorS_O < 0) colorS_O = 0;
+            println("colorS_O = "+colorS_O);
+            break;
+          case 'e':
+            colorB_O += 0.01;
+            if(colorB_O > 0.999) colorB_O = 0.999;
+            println("colorB_O = "+colorB_O);
+            break;
+          case 'd':
+            colorB_O -= 0.01;
+            if(colorB_O < 0) colorB_O = 0;
+            println("colorB_O = "+colorB_O);
+            break;
+        }
+      break;
+      case 'j':
+        switch(key) {
+          case 'a':
+            colorH_J += 0.01;
+            println("colorH_J = "+colorH_J);
+            break;
+          case 'q':
+            colorH_J -= 0.01;
+            println("colorH_J = "+colorH_J);
+            break;
+          case 'z':
+            colorS_J += 0.01;
+            if(colorS_J > 0.999) colorS_J = 0.999;
+            println("colorS_J = "+colorS_J);
+            break;
+          case 's':
+            colorS_J -= 0.01;
+            if(colorS_J < 0) colorS_J = 0;
+            println("colorS_J = "+colorS_J);
+            break;
+          case 'e':
+            colorB_J += 0.01;
+            if(colorB_J > 0.999) colorB_J = 0.999;
+            println("colorB_J = "+colorB_J);
+            break;
+          case 'd':
+            colorB_J -= 0.01;
+            if(colorB_J < 0) colorB_J = 0;
+            println("colorB_J = "+colorB_J);
+            break;
+        }
+      break;
+      case 'b':
+        switch(key) {
+          case 'a':
+            colorH_B += 0.01;
+            println("colorH_B = "+colorH_B);
+            break;
+          case 'q':
+            colorH_B -= 0.01;
+            println("colorH_B = "+colorH_B);
+            break;
+          case 'z':
+            colorS_B += 0.01;
+            if(colorS_B > 0.999) colorS_B = 0.999;
+            println("colorS_B = "+colorS_B);
+            break;
+          case 's':
+            colorS_B -= 0.01;
+            if(colorS_B < 0) colorS_B = 0;
+            println("colorS_B = "+colorS_B);
+            break;
+          case 'e':
+            colorB_B += 0.01;
+            if(colorB_B > 0.999) colorB_B = 0.999;
+            println("colorB_B = "+colorB_B);
+            break;
+          case 'd':
+            colorB_B -= 0.01;
+            if(colorB_B < 0) colorB_B = 0;
+            println("colorB_B = "+colorB_B);
+            break;
+        }
+      break;
     }
-    println("tolerance = "+tolerance);
   }
 }
 
 void keyReleased() {
   if(key == 'o' || key == 'j' || key == 'b')
     myFirstKey = '0';
-
 }
 
 /**
@@ -409,5 +513,5 @@ void keyReleased() {
 */
 
 void debugImageTreatment(PImage img, int x, int y){
-  image(img, x, y, control_width, control_height); 
+  image(img, x, y+marge, control_width, control_height); 
 }
