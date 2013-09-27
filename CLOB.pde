@@ -10,42 +10,50 @@ boolean      autoCalib=true;
 
 PImage       imgRGB; // déclare un/des objets PImage (conteneur d'image)
 PImage       imgRGBOrange, imgRGBJaune, imgRGBBleu;
-color        color_o = color(246,16,54);
-// int          hsb_o;
-float        colorH_O, colorS_O, colorB_O;
 
-PImage       imgBleu;
-color        color_b = color(86,127,173);
-// int          hsb_b; 
+// tracked colors
+color        tracked_color_o = color(246,16,54); // orange
+color        tracked_color_b = color(86,127,173); // bleu
+color        tracked_color_j = color(215,176,81); // jaune
+
+// HSB variables by colors
+float        colorH_O, colorS_O, colorB_O; 
 float        colorH_B, colorS_B, colorB_B;
-
-PImage       imgJaune;
-color        color_j = color(215,176,81);
-// int          hsb_j; 
 float        colorH_J, colorS_J, colorB_J;
 
-// How much to saturate the image by
-float saturation = 1;
-// The tolerance when comparing hues
-float tolerance = 0.1f;
+float        saturation = 1; // How much to saturate the image by
+float        tolerance = 0.1f;// The tolerance when comparing hues
 
 
-char       myFirstKey;
+char         myFirstKey; // keyboard shortcut utilitis
 
-OpenCV opencv; // déclare un objet OpenCV principal
+OpenCV       opencv; // déclare un objet OpenCV principal
 SimpleOpenNI kinectRGB; // déclare un objet SimpleOpenNI 
 
-//------ déclaration des variables de couleur utiles ---- 
-int         orange=color(255,0,0),
-            jaune=color(255,255,0),
-            bleu=color(0,0,255);
+//------ cleats colors ---- 
+int          orange=color(255,0,0),
+             jaune=color(255,255,0),
+             bleu=color(0,0,255);
+int          cleat_width = 3;
 
 PVector      com = new PVector();                                   
 
+int          display_width = 1024;
+int          display_height = 768;
+int          src_width = 640;
+int          src_height = 480;
+int          control_width = 64*3;
+int          control_height = 48*3;
+
+float        x_factor = 1.6;
+float        y_factor = 1.6;
+
 void setup()
 {
-  size(640, 468);
-  // size(640, 480);
+  // size(640, 468);
+  size(control_width+display_width, display_height);
+
+  // println("");
   // --- initialisation context kinect 3D (infrarouge)---
   kinect3D = new SimpleOpenNI(this); // Initialise un nouveau contexte qui communique avec la kinect
  
@@ -57,38 +65,27 @@ void setup()
 
   // kinect3D.setMirror(false); // disable mirror
   kinect3D.enableDepth(); // Autorise de collecter des données en profondeur
-  // kinect3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL); // enable skeleton generation for all joints
   kinect3D.enableUser();// enable skeleton generation for all joints
-  // enable skeleton generation for all joints
-  // kinect3D.enableUser(SimpleOpenNI.SKEL_PROFILE_ALL);
 
-  // --- initialisation fenêtre de base ---  
-  // size(kinect3D.depthWidth(), kinect3D.depthHeight());// Crée une fenêtre de la même taille que le champ 3D
-  // size(640, 480); // ouvre une fenêtre xpixels  x ypixels
-  
-  
   // --- initialisation paramètres graphiques utilisés ---
   background(255,255,255); // couleur fond fenetre
-  strokeWeight(1);
-  smooth(); 
   colorMode(RGB, 255,255,255); // fixe format couleur R G B pour fill, stroke, etc...
   rectMode(CORNER); // origine rectangle : CORNER = coin sup gauche | CENTER : centre 
   imageMode(CORNER); // origine image : CORNER = coin sup gauche | CENTER : centre
   frameRate(60);// Images par seconde
   //fill(0,0,255); // couleur remplissage RGB
   stroke (0,0,0); // couleur pourtour RGB
-  // strokeWeight(3); // largeur pourtour
-
-
+  strokeWeight(1);
+  smooth();
 
   // --- initialisation context kinect rgb (webcam) ---
   kinectRGB = new SimpleOpenNI(this);
   kinectRGB.enableRGB();
   
   // Orange
-  int r = (color_o >> 16) & 0xFF;
-  int g = (color_o >> 8) & 0xFF;
-  int b = color_o & 0xFF;
+  int r = (tracked_color_o >> 16) & 0xFF;
+  int g = (tracked_color_o >> 8) & 0xFF;
+  int b = tracked_color_o & 0xFF;
   float[] hsb = Color.RGBtoHSB(r, g, b, null);
   colorH_O = hsb[0];
   colorS_O = hsb[1];
@@ -97,9 +94,9 @@ void setup()
   println("HSB O: (" + (colorH_O*360) + ", " + (colorS_O*100) + ", " + (colorB_O*100) +")");
 
   // Jaune
-  r = (color_j >> 16) & 0xFF;
-  g = (color_j >> 8) & 0xFF;
-  b = color_j & 0xFF;
+  r = (tracked_color_j >> 16) & 0xFF;
+  g = (tracked_color_j >> 8) & 0xFF;
+  b = tracked_color_j & 0xFF;
   hsb = Color.RGBtoHSB(r, g, b, null);
   colorH_J = hsb[0];
   colorS_J = hsb[1];
@@ -108,9 +105,9 @@ void setup()
   println("HSB J: (" + (colorH_J*360) + ", " + (colorS_J*100) + ", " + (colorB_J*100) +")");
 
   // bleu
-  r = (color_b >> 16) & 0xFF;
-  g = (color_b >> 8) & 0xFF;
-  b = color_b & 0xFF;
+  r = (tracked_color_b >> 16) & 0xFF;
+  g = (tracked_color_b >> 8) & 0xFF;
+  b = tracked_color_b & 0xFF;
   hsb = Color.RGBtoHSB(r, g, b, null);
   colorH_B = hsb[0];
   colorS_B = hsb[1];
@@ -121,12 +118,12 @@ void setup()
 
   // --- initialise objet OpenCV à partir du parent This
   opencv = new OpenCV(this);
-  opencv.allocate(640,480);
+  opencv.allocate(src_width,src_height);
 
-  imgRGB = createImage (640,480, RGB);
-  imgRGBOrange = createImage (640,480, RGB);
-  imgRGBJaune = createImage (640,480, RGB);
-  imgRGBBleu = createImage (640,480, RGB);
+  imgRGB = createImage (src_width,src_height, RGB);
+  imgRGBOrange = createImage (src_width,src_height, RGB);
+  imgRGBJaune = createImage (src_width,src_height, RGB);
+  imgRGBBleu = createImage (src_width,src_height, RGB);
 
 }
 
@@ -157,58 +154,38 @@ void drawCleats(){
 
   kinectRGB.update();
   imgRGB = kinectRGB.rgbImage();
-  image(imgRGB, 0, 0, width/2, height/2);   // affichage image video
+  debugImageTreatment(imgRGB, 0, 0);
+  // image(imgRGB, control_width, 0, src_width*x_factor, src_height*y_factor); // debug purpose
 
   textSize(14) ;
 
+  // orange
+  imgRGBOrange = filterHSBImage(colorH_O, colorS_O, colorB_O);
+  debugImageTreatment(imgRGBOrange, 0, (control_height+10));
+  // jaune
+  imgRGBJaune = filterHSBImage(colorH_J, colorS_J, colorB_J);
+  debugImageTreatment(imgRGBJaune, 0, (control_height+10)*2);
+  // // bleu
+  imgRGBBleu = filterHSBImage(colorH_B, colorS_B, colorB_B);
+  debugImageTreatment(imgRGBBleu, 0, (control_height+10)*3);
+
+  strokeWeight(cleat_width);
+  blobsAndDrawLines(imgRGBOrange, orange);  // draw blob results
+  blobsAndDrawLines(imgRGBBleu, bleu);// draw blob results
+  blobsAndDrawLines(imgRGBJaune, jaune);// draw blob results
+}
+
+PImage filterHSBImage(float colorH, float colorS, float colorB){
   int rgb;
   int r, g, b; // Individual RGB components
   float[] hsb; // HSB color
   float h, s, br; // Individual HSB components
 
-
-  // orange
-  // imgOrange = kinectRGB.rgbImage();
-  imgRGBOrange.loadPixels(); // charge les pixels
-  for (int i = 0; i < width*height; i++) { 
-    rgb = imgRGB.pixels[i];
-
-    // Get individual RGB color components from the pixels color
-    // (check "http://processing.org/reference/rightshift.html" on the reference)
-    r = (rgb >> 16) & 0xFF;
-    g = (rgb >> 8) & 0xFF;
-    b = rgb & 0xFF;
-
-    hsb = Color.RGBtoHSB(r, g, b, null);
-
-    // The individual HSB components
-    h = hsb[0];
-    s = hsb[1]+saturation; // Saturarate colors, to make them more distinguishable
-    s = constrain(s, 0, 1); // But maintain values within the appropriate range
-    br = hsb[2];
-
-    // Test if the found color is similar enough to the color we are looking for
-    // If it's not, the pixel should be black
-    imgRGBOrange.pixels[i] = 0x00000000;
-     
-    // Starting with the hue, because it is the most distinctive component for our purpose
-    if (h > colorH_O-tolerance && h < colorH_O+tolerance) {
-      // The other components are still important for better precision
-      if(s >= colorS_O && br >= colorB_O) {
-        // If the color is within range, the pixel will be white
-        imgRGBOrange.pixels[i] = 0xFFFFFFFF;
-      }
-    }
-  }
-  imgRGBOrange.updatePixels();  // met à jour les pixels 
-  // imgRGBOrange.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
-  if(myFirstKey == 'o')
-    debugImageTreatment(imgRGBOrange, width/2, 0);
-
-  // jaune
-  kinectRGB.update();
-  imgRGBJaune.loadPixels(); // charge les pixels de la fenetre d'affichage
-  for (int i = 0; i < width*height; i++) { 
+  // kinectRGB.update();
+  // PImage img = kinectRGB.rgbImage();
+  PImage img = createImage (src_width,src_height, RGB);
+  img.loadPixels(); // charge les pixels de la fenetre d'affichage
+  for (int i = 0; i < src_width*src_height; i++) { 
     rgb = imgRGB.pixels[i];
     
     // Get individual RGB color components from the pixels color
@@ -227,111 +204,33 @@ void drawCleats(){
 
     // Test if the found color is similar enough to the color we are looking for
     // If it's not, the pixel should be black
-    imgRGBJaune.pixels[i] = 0x00000000;
+    img.pixels[i] = 0x00000000;
      
     // Starting with the hue, because it is the most distinctive component for our purpose
-    if (h > colorH_J-tolerance && h < colorH_J+tolerance) {
+    if (h > colorH-tolerance && h < colorH+tolerance) {
       // The other components are still important for better precision
-      if(s >= colorS_J && br >= colorB_J) {
+      if(s >= colorS && br >= colorB) {
         // If the color is within range, the pixel will be white
-        imgRGBJaune.pixels[i] = 0xFFFFFFFF;
+        img.pixels[i] = 0xFFFFFFFF;
       }
     }
   }
-  imgRGBJaune.updatePixels();  // met à jour les pixels 
-  // imgRGBJaune.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
-  if(myFirstKey == 'j')
-    debugImageTreatment(imgRGBJaune, 0, height/2);
+  img.updatePixels();  // met à jour les pixels 
+  return img;
+}
 
-
-  // bleu
-  imgRGBBleu = kinectRGB.rgbImage();
-  imgRGBBleu.loadPixels(); // charge les pixels de la fenetre d'affichage
-  for (int i = 0; i < width*height; i++) { 
-    rgb = imgRGB.pixels[i];
-    
-    // Get individual RGB color components from the pixels color
-    // (check "http://processing.org/reference/rightshift.html" on the reference)
-    r = (rgb >> 16) & 0xFF;
-    g = (rgb >> 8) & 0xFF;
-    b = rgb & 0xFF;
-
-    hsb = Color.RGBtoHSB(r, g, b, null);
-
-    // The individual HSB components
-    h = hsb[0];
-    s = hsb[1]+saturation; // Saturarate colors, to make them more distinguishable
-    s = constrain(s, 0, 1); // But maintain values within the appropriate range
-    br = hsb[2];
-
-    // Test if the found color is similar enough to the color we are looking for
-    // If it's not, the pixel should be black
-    imgRGBBleu.pixels[i] = 0x00000000;
-     
-    // Starting with the hue, because it is the most distinctive component for our purpose
-    if (h > colorH_B-tolerance && h < colorH_B+tolerance) {
-      // The other components are still important for better precision
-      if(s >= colorS_B && br >= colorB_B) {
-        // If the color is within range, the pixel will be white
-        imgRGBBleu.pixels[i] = 0xFFFFFFFF;
-      }
-    }
-  }
-  imgRGBBleu.updatePixels();  // met à jour les pixels 
-  // imgRGBBleu.filter(THRESHOLD,1); // applique filtre seuil à la fenetre d'affichage
-  if(myFirstKey == 'b')
-    debugImageTreatment(imgRGBBleu, width/2, height/2);
-
-
-
-
+void blobsAndDrawLines(PImage imgrgb, color col){
   //--- on rebascule dans OpenCV pour les blobs --- 
-  opencv.copy(imgRGBOrange); // charge l'image modifiée dans le buffer opencv
+  opencv.copy(imgrgb); // charge l'image modifiée dans le buffer opencv
   noTint();
-  strokeWeight(3);
+  Blob[] blobs = opencv.blobs( 10, src_width*src_height/4, 4, false, OpenCV.MAX_VERTICES*4 ); // trouve les formes à l'aide de la librairie openCV
 
-  // trouve les formes à l'aide de la librairie openCV
-  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobsOrange = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
-
-  // draw blob results
-  for( int i=0; i<blobsOrange.length; i++ ) { // passe en revue les blobs
+  for( int i=0; i<blobs.length; i++ ) { // passe en revue les blobs
     // tracé des formes détectées
-    Point[] ext = getMaxAndMinPoints(blobsOrange[i].points);
-    stroke(255, 0, 0);
-    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
-  }
-
-
-  opencv.copy(imgRGBBleu); // charge l'image modifiée dans le buffer opencv
-  noTint();
-
-  // trouve les formes à l'aide de la librairie openCV
-  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobsBleu = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
-
-  // draw blob results
-  for( int i=0; i<blobsBleu.length; i++ ) { // passe en revue les blobs
-    // tracé des formes détectées
-    Point[] ext = getMaxAndMinPoints(blobsBleu[i].points);
-    stroke(0, 0, 255);
-    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
-  }
-
-  opencv.copy(imgRGBJaune); // charge l'image modifiée dans le buffer opencv
-  noTint();
-
-  // trouve les formes à l'aide de la librairie openCV
-  // blobs(minArea, maxArea, maxBlobs, findHoles, [maxVertices]);
-  Blob[] blobsJaune = opencv.blobs( 10, width*height/4, 4, false, OpenCV.MAX_VERTICES*4 );
-
-  // draw blob results
-  for( int i=0; i<blobsJaune.length; i++ ) { // passe en revue les blobs
-    // tracé des formes détectées
-    Point[] ext = getMaxAndMinPoints(blobsJaune[i].points);
-    stroke(255,255,0);
-    line(ext[0].x, ext[0].y, ext[1].x, ext[1].y);
-  }
+    Point[] ext = getMaxAndMinPoints(blobs[i].points);
+    stroke(col);
+    line(control_width+(ext[0].x*x_factor), ext[0].y*y_factor, control_width+(ext[1].x*x_factor), ext[1].y*y_factor);
+  } 
 }
 
 Point[] getMaxAndMinPoints(Point[] points){
@@ -409,13 +308,50 @@ void drawCenterOfMass(int userId){
 
 void drawSkeleton(int userId){
   println("drawSkeleton - userId = " + userId);
-  stroke(0,0,0);
+  // kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
+  // kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
+  // kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
+  // kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
+  // kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
+
+  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
+  drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
+  drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
+  drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
+}
+
+void drawLimb(int userId,int jointType1,int jointType2){
+  PVector jointPos1 = new PVector();
+  PVector jointPos2 = new PVector();
+  float  confidence;
   
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_RIGHT_HAND);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_HEAD, SimpleOpenNI.SKEL_LEFT_HAND);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_HAND, SimpleOpenNI.SKEL_RIGHT_FOOT);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_LEFT_HAND, SimpleOpenNI.SKEL_LEFT_FOOT);
-  kinect3D.drawLimb(userId, SimpleOpenNI.SKEL_RIGHT_FOOT, SimpleOpenNI.SKEL_LEFT_FOOT);
+  // draw the joint position
+  confidence = kinect3D.getJointPositionSkeleton(userId,jointType1,jointPos1);
+  confidence = kinect3D.getJointPositionSkeleton(userId,jointType2,jointPos2);
+  // println("confidence: "+confidence);
+  // println("jointPos1: "+jointPos1);
+  // println("jointPos2: "+jointPos2);
+
+  PVector convertedJointPos1 = new PVector();
+  PVector convertedJointPos2 = new PVector();
+  kinect3D.convertRealWorldToProjective(jointPos1, convertedJointPos1);
+  kinect3D.convertRealWorldToProjective(jointPos2, convertedJointPos2);
+
+  println("x_factor: "+x_factor);
+  println("y_factor: "+y_factor);
+
+  stroke(0,0,0);
+  strokeWeight(2);
+  line(
+    control_width+(convertedJointPos1.x*x_factor),
+    // control_width+(convertedJointPos1.x),
+    convertedJointPos1.y*y_factor,
+    control_width+(convertedJointPos2.x*x_factor),
+    // control_width+(convertedJointPos2.x),
+    convertedJointPos2.y*y_factor
+  );
+  // line((jointPos1.x),jointPos1.y,(jointPos2.x),jointPos2.y);
 }
 
 void onNewUser(SimpleOpenNI curContext,int userId){
@@ -473,5 +409,5 @@ void keyReleased() {
 */
 
 void debugImageTreatment(PImage img, int x, int y){
-  image(img, x, y, width/2, height/2); 
+  image(img, x, y, control_width, control_height); 
 }
