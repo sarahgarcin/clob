@@ -74,7 +74,7 @@ void setup()
   colorMode(RGB, 255,255,255); // fixe format couleur R G B pour fill, stroke, etc...
   rectMode(CORNER); // origine rectangle : CORNER = coin sup gauche | CENTER : centre 
   imageMode(CORNER); // origine image : CORNER = coin sup gauche | CENTER : centre
-  frameRate(24);// Images par seconde
+  frameRate(60);// Images par seconde
   //fill(0,0,255); // couleur remplissage RGB
   stroke (0,0,0); // couleur pourtour RGB
   // strokeWeight(3); // largeur pourtour
