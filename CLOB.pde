@@ -17,13 +17,11 @@ color        tracked_color_b = color(86,127,173); // bleu
 color        tracked_color_j = color(215,176,81); // jaune
 
 // HSB variables by colors
-float        colorH_O, colorS_O, colorB_O; 
-float        colorH_B, colorS_B, colorB_B;
-float        colorH_J, colorS_J, colorB_J;
+float        colorH_O, colorS_O, colorB_O, tolerance_O = 1f; 
+float        colorH_B, colorS_B, colorB_B, tolerance_B = 1f;
+float        colorH_J, colorS_J, colorB_J, tolerance_J = 1f;
 
-float        saturation = 1; // How much to saturate the image by
-float        tolerance = 0.1f;// The tolerance when comparing hues
-
+float        saturation = 0.5; // How much to saturate the image by
 
 char         myFirstKey; // keyboard shortcut utilitis
 
@@ -172,24 +170,24 @@ void drawCleats(){
   kinectRGB.update();
   imgRGB = kinectRGB.rgbImage();
   debugImageTreatment(imgRGB, 0, 0);
-  image(imgRGB, control_width+marge, marge, src_width*x_factor, src_height*y_factor); // debug purpose
+  // image(imgRGB, control_width+marge, marge, src_width*x_factor, src_height*y_factor); // debug purpose
 
   textSize(14) ;
   strokeWeight(0);
   // orange
-  imgRGBOrange = filterHSBImage(colorH_O, colorS_O, colorB_O);
+  imgRGBOrange = filterHSBImage(colorH_O, colorS_O, colorB_O, tolerance_O);
   fill(Color.HSBtoRGB(colorH_O, colorS_O, colorB_O));
   rect(0, marge+control_height+10, control_width, 10);
   debugImageTreatment(imgRGBOrange, 0, (control_height+20));
   
   // jaune
-  imgRGBJaune = filterHSBImage(colorH_J, colorS_J, colorB_J);
+  imgRGBJaune = filterHSBImage(colorH_J, colorS_J, colorB_J, tolerance_J);
   fill(Color.HSBtoRGB(colorH_J, colorS_J, colorB_J));
   rect(0, marge+(control_height+20)*2-10, control_width, 10);
   debugImageTreatment(imgRGBJaune, 0, (control_height+20)*2);
   
   // // bleu
-  imgRGBBleu = filterHSBImage(colorH_B, colorS_B, colorB_B);
+  imgRGBBleu = filterHSBImage(colorH_B, colorS_B, colorB_B, tolerance_B);
   fill(Color.HSBtoRGB(colorH_B, colorS_B, colorB_B));
   rect(0, marge+(control_height+20)*3-10, control_width, 10);
   debugImageTreatment(imgRGBBleu, 0, (control_height+20)*3);
@@ -200,7 +198,7 @@ void drawCleats(){
   blobsAndDrawLines(imgRGBJaune, jaune);// draw blob results
 }
 
-PImage filterHSBImage(float colorH, float colorS, float colorB){
+PImage filterHSBImage(float colorH, float colorS, float colorB, float tolerance){
   int rgb;
   int r, g, b; // Individual RGB components
   float[] hsb; // HSB color
@@ -401,104 +399,136 @@ void keyPressed() {
   if(key == 'o' || key == 'j' || key == 'b'){
     myFirstKey = key;
   }
-  if(key == 'a' || key == 'q' || key == 'z' || key == 's' || key == 'e' || key == 'd'){
-    switch(myFirstKey){
-      case 'o':
-        switch(key) {
-          case 'a':
-            colorH_O += 0.01;
-            println("colorH_O = "+colorH_O);
-            break;
-          case 'q':
-            colorH_O -= 0.01;
-            println("colorH_O = "+colorH_O);
-            break;
-          case 'z':
-            colorS_O += 0.01;
-            if(colorS_O > 0.999) colorS_O = 0.999;
-            println("colorS_O = "+colorS_O);
-            break;
-          case 's':
-            colorS_O -= 0.01;
-            if(colorS_O < 0) colorS_O = 0;
-            println("colorS_O = "+colorS_O);
-            break;
-          case 'e':
-            colorB_O += 0.01;
-            if(colorB_O > 0.999) colorB_O = 0.999;
-            println("colorB_O = "+colorB_O);
-            break;
-          case 'd':
-            colorB_O -= 0.01;
-            if(colorB_O < 0) colorB_O = 0;
-            println("colorB_O = "+colorB_O);
-            break;
-        }
-      break;
-      case 'j':
-        switch(key) {
-          case 'a':
-            colorH_J += 0.01;
-            println("colorH_J = "+colorH_J);
-            break;
-          case 'q':
-            colorH_J -= 0.01;
-            println("colorH_J = "+colorH_J);
-            break;
-          case 'z':
-            colorS_J += 0.01;
-            if(colorS_J > 0.999) colorS_J = 0.999;
-            println("colorS_J = "+colorS_J);
-            break;
-          case 's':
-            colorS_J -= 0.01;
-            if(colorS_J < 0) colorS_J = 0;
-            println("colorS_J = "+colorS_J);
-            break;
-          case 'e':
-            colorB_J += 0.01;
-            if(colorB_J > 0.999) colorB_J = 0.999;
-            println("colorB_J = "+colorB_J);
-            break;
-          case 'd':
-            colorB_J -= 0.01;
-            if(colorB_J < 0) colorB_J = 0;
-            println("colorB_J = "+colorB_J);
-            break;
-        }
-      break;
-      case 'b':
-        switch(key) {
-          case 'a':
-            colorH_B += 0.01;
-            println("colorH_B = "+colorH_B);
-            break;
-          case 'q':
-            colorH_B -= 0.01;
-            println("colorH_B = "+colorH_B);
-            break;
-          case 'z':
-            colorS_B += 0.01;
-            if(colorS_B > 0.999) colorS_B = 0.999;
-            println("colorS_B = "+colorS_B);
-            break;
-          case 's':
-            colorS_B -= 0.01;
-            if(colorS_B < 0) colorS_B = 0;
-            println("colorS_B = "+colorS_B);
-            break;
-          case 'e':
-            colorB_B += 0.01;
-            if(colorB_B > 0.999) colorB_B = 0.999;
-            println("colorB_B = "+colorB_B);
-            break;
-          case 'd':
-            colorB_B -= 0.01;
-            if(colorB_B < 0) colorB_B = 0;
-            println("colorB_B = "+colorB_B);
-            break;
-        }
-      break;
+  if(myFirstKey == 'o' || myFirstKey == 'j' || myFirstKey == 'b'){
+    if(key == 'a' || key == 'q' || key == 'z' || key == 's' || key == 'e' || key == 'd'){
+      switch(myFirstKey){
+        case 'o':
+          switch(key) {
+            case 'a':
+              colorH_O += 0.01;
+              println("colorH_O = "+colorH_O);
+              break;
+            case 'q':
+              colorH_O -= 0.01;
+              println("colorH_O = "+colorH_O);
+              break;
+            case 'z':
+              colorS_O += 0.01;
+              if(colorS_O > 0.999) colorS_O = 0.999;
+              println("colorS_O = "+colorS_O);
+              break;
+            case 's':
+              colorS_O -= 0.01;
+              if(colorS_O < 0) colorS_O = 0;
+              println("colorS_O = "+colorS_O);
+              break;
+            case 'e':
+              colorB_O += 0.01;
+              if(colorB_O > 0.999) colorB_O = 0.999;
+              println("colorB_O = "+colorB_O);
+              break;
+            case 'd':
+              colorB_O -= 0.01;
+              if(colorB_O < 0) colorB_O = 0;
+              println("colorB_O = "+colorB_O);
+              break;
+            case 'r':
+              tolerance_O += 0.01;
+              // if(colorB_O > 0.999) colorB_O = 0.999;
+              println("tolerance_O = "+tolerance_O);
+              break;
+            case 'f':
+              tolerance_O -= 0.01;
+              // if(colorB_O < 0) colorB_O = 0;
+              println("tolerance_O = "+tolerance_O);
+              break;
+          }
+        break;
+        case 'j':
+          switch(key) {
+            case 'a':
+              colorH_J += 0.01;
+              println("colorH_J = "+colorH_J);
+              break;
+            case 'q':
+              colorH_J -= 0.01;
+              println("colorH_J = "+colorH_J);
+              break;
+            case 'z':
+              colorS_J += 0.01;
+              if(colorS_J > 0.999) colorS_J = 0.999;
+              println("colorS_J = "+colorS_J);
+              break;
+            case 's':
+              colorS_J -= 0.01;
+              if(colorS_J < 0) colorS_J = 0;
+              println("colorS_J = "+colorS_J);
+              break;
+            case 'e':
+              colorB_J += 0.01;
+              if(colorB_J > 0.999) colorB_J = 0.999;
+              println("colorB_J = "+colorB_J);
+              break;
+            case 'd':
+              colorB_J -= 0.01;
+              if(colorB_J < 0) colorB_J = 0;
+              println("colorB_J = "+colorB_J);
+              break;
+            case 'r':
+              tolerance_J += 0.01;
+              // if(colorB_J > 0.999) colorB_J = 0.999;
+              println("tolerance_J = "+tolerance_J);
+              break;
+            case 'f':
+              tolerance_J -= 0.01;
+              // if(colorB_J < 0) colorB_J = 0;
+              println("tolerance_J = "+tolerance_J);
+              break;
+          }
+        break;
+        case 'b':
+          switch(key) {
+            case 'a':
+              colorH_B += 0.01;
+              println("colorH_B = "+colorH_B);
+              break;
+            case 'q':
+              colorH_B -= 0.01;
+              println("colorH_B = "+colorH_B);
+              break;
+            case 'z':
+              colorS_B += 0.01;
+              if(colorS_B > 0.999) colorS_B = 0.999;
+              println("colorS_B = "+colorS_B);
+              break;
+            case 's':
+              colorS_B -= 0.01;
+              if(colorS_B < 0) colorS_B = 0;
+              println("colorS_B = "+colorS_B);
+              break;
+            case 'e':
+              colorB_B += 0.01;
+              if(colorB_B > 0.999) colorB_B = 0.999;
+              println("colorB_B = "+colorB_B);
+              break;
+            case 'd':
+              colorB_B -= 0.01;
+              if(colorB_B < 0) colorB_B = 0;
+              println("colorB_B = "+colorB_B);
+              break;
+            case 'r':
+              tolerance_B += 0.01;
+              // if(colorB_B > 0.999) colorB_B = 0.999;
+              println("tolerance_B = "+tolerance_B);
+              break;
+            case 'f':
+              tolerance_B -= 0.01;
+              // if(colorB_B < 0) colorB_B = 0;
+              println("tolerance_B = "+tolerance_B);
+              break;
+          }
+        break;
+      }
     }
   }
 }
